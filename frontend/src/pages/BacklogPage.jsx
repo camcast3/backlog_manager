@@ -4,6 +4,7 @@ import StatusBadge from '../components/StatusBadge';
 import VibeBadge from '../components/VibeBadge';
 import HltbInfo from '../components/HltbInfo';
 import AddGameModal from '../components/AddGameModal';
+import EditGameModal from '../components/EditGameModal';
 import { useToast } from '../context/ToastContext';
 
 const STATUS_OPTIONS = [
@@ -35,6 +36,7 @@ export default function BacklogPage() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
   const [filters, setFilters] = useState({ status: 'want_to_play', sort: 'priority' });
@@ -188,6 +190,13 @@ export default function BacklogPage() {
                 </button>
               ))}
               <button
+                className="btn-secondary"
+                style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
+                onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
+              >
+                ✏️
+              </button>
+              <button
                 className="btn-danger"
                 style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
                 onClick={(e) => { e.stopPropagation(); deleteItem(item); }}
@@ -244,6 +253,14 @@ export default function BacklogPage() {
 
       {showAddModal && (
         <AddGameModal onClose={() => setShowAddModal(false)} onAdded={() => loadItems()} />
+      )}
+
+      {editingItem && (
+        <EditGameModal
+          item={editingItem}
+          onClose={() => setEditingItem(null)}
+          onUpdated={() => loadItems()}
+        />
       )}
     </div>
   );

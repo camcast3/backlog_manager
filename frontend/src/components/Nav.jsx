@@ -6,6 +6,7 @@ const navItems = [
   { to: '/backlog', icon: '🎮', label: 'Backlog' },
   { to: '/games', icon: '📦', label: 'Game Library' },
   { to: '/progress', icon: '⭐', label: 'My Progress' },
+  { to: '/settings', icon: '⚙️', label: 'Settings' },
 ];
 
 const navStyle = {
