@@ -102,7 +102,7 @@ export default async function backlogRoutes(fastify) {
   // GET /backlog/:id
   fastify.get('/:id', async (req, reply) => {
     const item = await getBacklogItemFull(req.params.id);
-    if (!item) return reply.status(404).send({ error: 'Backlog item not found' });
+    if (!item) { reply.code(404); return { error: 'Backlog item not found' }; }
     return item;
   });
 
@@ -113,10 +113,10 @@ export default async function backlogRoutes(fastify) {
       why_i_want_to_play, interview_answers,
     } = req.body;
 
-    if (!game_id) return reply.status(400).send({ error: 'game_id is required' });
+    if (!game_id) { reply.code(400); return { error: 'game_id is required' }; }
 
     const [game] = await sql`SELECT * FROM games WHERE id = ${game_id}`;
-    if (!game) return reply.status(404).send({ error: 'Game not found' });
+    if (!game) { reply.code(404); return { error: 'Game not found' }; }
 
     const [backlogItem] = await sql`
       INSERT INTO backlog_items (game_id, status, priority, personal_notes, why_i_want_to_play)
@@ -149,7 +149,8 @@ export default async function backlogRoutes(fastify) {
     const gamification = await onGameAdded(backlogItem, game);
 
     const enriched = await getBacklogItemFull(backlogItem.id);
-    return reply.status(201).send({ item: enriched, gamification });
+    reply.code(201);
+    return { item: enriched, gamification };
   });
 
   // PATCH /backlog/:id - update status, notes, hours, etc.
@@ -161,7 +162,7 @@ export default async function backlogRoutes(fastify) {
     } = req.body;
 
     const [existing] = await sql`SELECT * FROM backlog_items WHERE id = ${id}`;
-    if (!existing) return reply.status(404).send({ error: 'Backlog item not found' });
+    if (!existing) { reply.code(404); return { error: 'Backlog item not found' }; }
 
     const oldStatus = existing.status;
 
@@ -182,7 +183,8 @@ export default async function backlogRoutes(fastify) {
     if (status) updates.last_activity_date = new Date().toISOString().split('T')[0];
 
     if (Object.keys(updates).length === 0) {
-      return reply.status(400).send({ error: 'No valid fields to update' });
+      reply.code(400);
+      return { error: 'No valid fields to update' };
     }
 
     const setClauses = Object.keys(updates).map((k) => sql`${sql(k)} = ${updates[k]}`);
@@ -207,17 +209,17 @@ export default async function backlogRoutes(fastify) {
   // DELETE /backlog/:id
   fastify.delete('/:id', async (req, reply) => {
     const [item] = await sql`DELETE FROM backlog_items WHERE id = ${req.params.id} RETURNING id`;
-    if (!item) return reply.status(404).send({ error: 'Backlog item not found' });
+    if (!item) { reply.code(404); return { error: 'Backlog item not found' }; }
     return { deleted: true, id: item.id };
   });
 
   // POST /backlog/:id/staleness-response - user responds to a staleness check
   fastify.post('/:id/staleness-response', async (req, reply) => {
     const { response } = req.body;
-    if (!response) return reply.status(400).send({ error: 'response is required' });
+    if (!response) { reply.code(400); return { error: 'response is required' }; }
 
     const [item] = await sql`SELECT id FROM backlog_items WHERE id = ${req.params.id}`;
-    if (!item) return reply.status(404).send({ error: 'Backlog item not found' });
+    if (!item) { reply.code(404); return { error: 'Backlog item not found' }; }
 
     const check = await recordStalenessResponse(req.params.id, response);
 

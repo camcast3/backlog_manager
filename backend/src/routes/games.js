@@ -23,7 +23,7 @@ export default async function gamesRoutes(fastify) {
   // GET /games/:id
   fastify.get('/:id', async (req, reply) => {
     const [game] = await sql`SELECT * FROM games WHERE id = ${req.params.id}`;
-    if (!game) return reply.status(404).send({ error: 'Game not found' });
+    if (!game) { reply.code(404); return { error: 'Game not found' }; }
     return game;
   });
 
@@ -37,7 +37,8 @@ export default async function gamesRoutes(fastify) {
     } = req.body;
 
     if (!title || !platform) {
-      return reply.status(400).send({ error: 'title and platform are required' });
+      reply.code(400);
+      return { error: 'title and platform are required' };
     }
 
     const [game] = await sql`
@@ -71,9 +72,9 @@ export default async function gamesRoutes(fastify) {
         updated_at = NOW()
       RETURNING *
     `;
-    return reply.status(201).send(game);
+    reply.code(201);
+    return game;
   });
-
   // PATCH /games/:id - update game data
   fastify.patch('/:id', async (req, reply) => {
     const { id } = req.params;
@@ -89,7 +90,8 @@ export default async function gamesRoutes(fastify) {
       Object.entries(fields).filter(([k]) => allowed.includes(k))
     );
     if (Object.keys(updates).length === 0) {
-      return reply.status(400).send({ error: 'No valid fields to update' });
+      reply.code(400);
+      return { error: 'No valid fields to update' };
     }
 
     // Build dynamic update using postgres tagged template
@@ -103,14 +105,14 @@ export default async function gamesRoutes(fastify) {
       WHERE id = ${id}
       RETURNING *
     `;
-    if (!game) return reply.status(404).send({ error: 'Game not found' });
+    if (!game) { reply.code(404); return { error: 'Game not found' }; }
     return game;
   });
 
   // DELETE /games/:id
   fastify.delete('/:id', async (req, reply) => {
     const [game] = await sql`DELETE FROM games WHERE id = ${req.params.id} RETURNING id`;
-    if (!game) return reply.status(404).send({ error: 'Game not found' });
+    if (!game) { reply.code(404); return { error: 'Game not found' }; }
     return { deleted: true, id: game.id };
   });
 
