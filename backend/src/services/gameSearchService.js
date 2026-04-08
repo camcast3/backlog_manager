@@ -130,9 +130,9 @@ function normalizeHltbEntry(entry) {
     image_url: entry.game_image ? `${HLTB_IMAGE_BASE}${entry.game_image}` : null,
     platforms: entry.profile_platform ? entry.profile_platform.split(', ') : [],
     release_year: entry.release_world > 0 ? new Date(entry.release_world * 1000).getFullYear() : null,
-    hltb_main_story: entry.comp_main ? Math.round(entry.comp_main / 3600) : null,
-    hltb_main_plus_extras: entry.comp_plus ? Math.round(entry.comp_plus / 3600) : null,
-    hltb_completionist: entry.comp_100 ? Math.round(entry.comp_100 / 3600) : null,
+    hltb_main_story: entry.comp_main ? Math.round((entry.comp_main / 3600) * 10) / 10 : null,
+    hltb_main_plus_extras: entry.comp_plus ? Math.round((entry.comp_plus / 3600) * 10) / 10 : null,
+    hltb_completionist: entry.comp_100 ? Math.round((entry.comp_100 / 3600) * 10) / 10 : null,
     developer: entry.profile_dev ?? null,
     genre: entry.profile_genre ?? null,
   };
