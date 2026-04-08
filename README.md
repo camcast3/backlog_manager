@@ -198,7 +198,10 @@ cd backend
 npm test
 ```
 
-11 unit tests cover vibe analysis keyword detection and XP / leveling math.
+53 tests across two suites:
+
+- **`services.test.js`** — 30 unit tests covering all 8 vibe mood categories, all 5 session-length variants, interview-answer analysis, tag deduplication, and XP/level math boundaries.
+- **`routes.test.js`** — 23 integration tests using Fastify's `inject()` API with a mocked database, covering validation error paths and success responses for every route.
 
 ---
 
