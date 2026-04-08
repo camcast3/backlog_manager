@@ -1,5 +1,6 @@
 import { analyzeVibeInterview } from '../services/vibeService.js';
 import { xpForLevel, levelFromXp } from '../services/gamificationService.js';
+import { getHltbTtlDays, isHltbStale } from '../services/hltbService.js';
 
 describe('vibeService.analyzeVibeInterview', () => {
   // ── Mood tag detection ──────────────────────────────────────────────────────
@@ -186,5 +187,86 @@ describe('gamificationService XP / level math', () => {
   test('levelFromXp handles large XP values', () => {
     expect(levelFromXp(40000)).toBe(20);
     expect(levelFromXp(39999)).toBe(19);
+  });
+});
+
+// ── hltbService ───────────────────────────────────────────────────────────────
+
+describe('hltbService.getHltbTtlDays', () => {
+  const currentYear = new Date().getFullYear();
+
+  test('brand-new game (current year) gets 7-day TTL', () => {
+    expect(getHltbTtlDays(currentYear)).toBe(7);
+  });
+
+  test('game released 2 years ago gets 30-day TTL', () => {
+    expect(getHltbTtlDays(currentYear - 2)).toBe(30);
+  });
+
+  test('game released 5 years ago gets 90-day TTL', () => {
+    expect(getHltbTtlDays(currentYear - 5)).toBe(90);
+  });
+
+  test('game released 15 years ago gets 365-day TTL', () => {
+    expect(getHltbTtlDays(currentYear - 15)).toBe(365);
+  });
+
+  test('game with no release year defaults to 30-day TTL', () => {
+    expect(getHltbTtlDays(null)).toBe(30);
+    expect(getHltbTtlDays(undefined)).toBe(30);
+  });
+
+  test('boundary: age exactly 1 year maps to 30-day TTL', () => {
+    expect(getHltbTtlDays(currentYear - 1)).toBe(30);
+  });
+
+  test('boundary: age exactly 3 years maps to 90-day TTL', () => {
+    expect(getHltbTtlDays(currentYear - 3)).toBe(90);
+  });
+
+  test('boundary: age exactly 10 years maps to 365-day TTL', () => {
+    expect(getHltbTtlDays(currentYear - 10)).toBe(365);
+  });
+});
+
+describe('hltbService.isHltbStale', () => {
+  const currentYear = new Date().getFullYear();
+
+  test('returns true when hltb_cached_at is null (never cached)', () => {
+    expect(isHltbStale({ hltb_cached_at: null, release_year: currentYear - 5 })).toBe(true);
+  });
+
+  test('returns true when hltb_cached_at is undefined', () => {
+    expect(isHltbStale({ release_year: currentYear - 5 })).toBe(true);
+  });
+
+  test('returns false when cached very recently (within TTL)', () => {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    expect(isHltbStale({ hltb_cached_at: oneHourAgo, release_year: currentYear })).toBe(false);
+  });
+
+  test('returns true when cache is older than the TTL', () => {
+    // 10-day-old cache for a brand-new game (7-day TTL) → stale
+    const tenDaysAgo = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString();
+    expect(isHltbStale({ hltb_cached_at: tenDaysAgo, release_year: currentYear })).toBe(true);
+  });
+
+  test('returns false for an old game cached 100 days ago (365-day TTL)', () => {
+    const hundredDaysAgo = new Date(Date.now() - 100 * 24 * 60 * 60 * 1000).toISOString();
+    expect(isHltbStale({ hltb_cached_at: hundredDaysAgo, release_year: currentYear - 20 })).toBe(false);
+  });
+
+  test('returns true for an old game cached 400 days ago (365-day TTL)', () => {
+    const fourHundredDaysAgo = new Date(Date.now() - 400 * 24 * 60 * 60 * 1000).toISOString();
+    expect(isHltbStale({ hltb_cached_at: fourHundredDaysAgo, release_year: currentYear - 20 })).toBe(true);
+  });
+
+  test('uses 30-day TTL when release_year is absent', () => {
+    const twentyDaysAgo = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString();
+    // 20 days < 30-day TTL → not stale
+    expect(isHltbStale({ hltb_cached_at: twentyDaysAgo })).toBe(false);
+    const thirtyFiveDaysAgo = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString();
+    // 35 days > 30-day TTL → stale
+    expect(isHltbStale({ hltb_cached_at: thirtyFiveDaysAgo })).toBe(true);
   });
 });

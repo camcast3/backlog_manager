@@ -143,6 +143,38 @@ describe('GET /api/games/platforms/list', () => {
   });
 });
 
+describe('POST /api/games/:id/refresh-hltb', () => {
+  test('returns 200 with updated game including hltb_stale=false when just refreshed', async () => {
+    const now = new Date().toISOString();
+    queryQueue.push([{
+      id: 1, title: 'Hollow Knight', platform: 'PC (Steam)',
+      release_year: 2017,
+      hltb_main_story: 27.0, hltb_main_plus_extras: 40.5, hltb_completionist: 62.0,
+      hltb_cached_at: now,
+    }]);
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/games/1/refresh-hltb',
+      payload: { hltb_main_story: 27.0, hltb_main_plus_extras: 40.5, hltb_completionist: 62.0 },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.hltb_main_story).toBe(27.0);
+    expect(body.hltb_stale).toBe(false);
+  });
+
+  test('returns 404 when game does not exist', async () => {
+    queryQueue.push([]);  // UPDATE RETURNING returns empty
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/games/999/refresh-hltb',
+      payload: { hltb_main_story: 10.0 },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(res.json().error).toBe('Game not found');
+  });
+});
+
 // ── Backlog routes ────────────────────────────────────────────────────────────
 describe('GET /api/backlog/stats', () => {
   test('returns 200 with status counts', async () => {

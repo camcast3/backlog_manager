@@ -11,6 +11,7 @@ const sql = postgres(process.env.DATABASE_URL || 'postgres://postgres:password@l
 const migrations = [
   '001_initial_schema.sql',
   '002_seed_achievements.sql',
+  '003_hltb_cache.sql',
 ];
 
 async function migrate() {
