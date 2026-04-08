@@ -41,7 +41,12 @@ if (process.argv[1] === new URL(import.meta.url).pathname) {
   try {
     await server.listen({ port: PORT, host: HOST });
     console.log(`🎮 Backlog Manager API running at http://${HOST}:${PORT}`);
-  } catch (err) {
+    if (!process.env.TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) {
+      console.log('⚠️  IGDB not configured — game cover images will be unavailable.');
+      console.log('   Set TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET in your .env file.');
+      console.log('   Register at https://dev.twitch.tv/console/apps');
+    }
+  }catch (err) {
     server.log.error(err);
     process.exit(1);
   }

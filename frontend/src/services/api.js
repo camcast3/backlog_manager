@@ -44,9 +44,10 @@ export const progressApi = {
   activity: () => request('GET', '/progress/activity'),
 };
 
-// ── Game Search (HLTB + RAWG) ─────────────────────────────────
+// ── Game Search (HLTB + IGDB) ─────────────────────────────────
 export const searchApi = {
   games: (q) => request('GET', `/search/games?${new URLSearchParams({ q })}`),
   hltb: (q) => request('GET', `/search/hltb?${new URLSearchParams({ q })}`),
   covers: (q) => request('GET', `/search/covers?${new URLSearchParams({ q })}`),
+  status: () => request('GET', '/search/status'),
 };

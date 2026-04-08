@@ -54,10 +54,12 @@ export async function getTwitchToken() {
   return cachedToken;
 }
 
-// Exposed for testing
-export function _resetTokenCache() {
-  cachedToken = null;
-  tokenExpiresAt = 0;
+/**
+ * Returns true if IGDB credentials (TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET)
+ * are configured in the environment.
+ */
+export function isIgdbConfigured() {
+  return !!(process.env.TWITCH_CLIENT_ID && process.env.TWITCH_CLIENT_SECRET);
 }
 
 // ── HLTB Search ────────────────────────────────────────────────

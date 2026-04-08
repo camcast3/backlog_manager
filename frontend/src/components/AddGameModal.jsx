@@ -24,6 +24,7 @@ export default function AddGameModal({ onClose, onAdded }) {
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [igdbAvailable, setIgdbAvailable] = useState(true);
   const searchTimer = useRef(null);
   const dropdownRef = useRef(null);
 
@@ -109,6 +110,11 @@ export default function AddGameModal({ onClose, onAdded }) {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
+  // Check IGDB availability on mount
+  useEffect(() => {
+    searchApi.status().then((s) => setIgdbAvailable(s.igdb)).catch(() => {});
+  }, []);
+
   async function handleSubmit() {
     if (!gameData.title.trim()) {
       toast('Game title is required', 'warning');
@@ -175,6 +181,16 @@ export default function AddGameModal({ onClose, onAdded }) {
 
         {step === 1 && (
           <>
+            {!igdbAvailable && (
+              <div style={{
+                background: 'rgba(255, 193, 7, 0.1)', border: '1px solid rgba(255, 193, 7, 0.3)',
+                borderRadius: 8, padding: '0.6rem 0.75rem', marginBottom: '1rem',
+                fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5,
+              }}>
+                ⚠️ IGDB not configured — cover images won't auto-fill. HLTB search still works!
+                <br />Set <code>TWITCH_CLIENT_ID</code> and <code>TWITCH_CLIENT_SECRET</code> in your backend .env file.
+              </div>
+            )}
             <div className="form-group" style={{ position: 'relative' }} ref={dropdownRef}>
               <label>Game Title * <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>— type to search HLTB & IGDB</span></label>
               <div style={{ position: 'relative' }}>

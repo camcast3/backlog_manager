@@ -2,7 +2,7 @@ import { analyzeVibeInterview } from '../services/vibeService.js';
 import { xpForLevel, levelFromXp } from '../services/gamificationService.js';
 import { getHltbTtlDays, isHltbStale } from '../services/hltbService.js';
 import { analyzeVibeAnswers, VIBE_QUESTIONS, PRIMARY_MOOD_WEIGHT } from '../services/vibeQuestionService.js';
-import { searchHltb, searchCovers, searchGames } from '../services/gameSearchService.js';
+import { searchHltb, searchCovers, searchGames, isIgdbConfigured } from '../services/gameSearchService.js';
 
 describe('vibeService.analyzeVibeInterview', () => {
   // ── Mood tag detection ──────────────────────────────────────────────────────
@@ -510,6 +510,38 @@ describe('gameSearchService', () => {
       expect(results).toEqual([]);
       if (origId) process.env.TWITCH_CLIENT_ID = origId;
       if (origSecret) process.env.TWITCH_CLIENT_SECRET = origSecret;
+    });
+  });
+
+  describe('isIgdbConfigured', () => {
+    test('returns false when credentials are missing', () => {
+      const origId = process.env.TWITCH_CLIENT_ID;
+      const origSecret = process.env.TWITCH_CLIENT_SECRET;
+      delete process.env.TWITCH_CLIENT_ID;
+      delete process.env.TWITCH_CLIENT_SECRET;
+      expect(isIgdbConfigured()).toBe(false);
+      if (origId) process.env.TWITCH_CLIENT_ID = origId;
+      if (origSecret) process.env.TWITCH_CLIENT_SECRET = origSecret;
+    });
+
+    test('returns false when only client ID is set', () => {
+      const origId = process.env.TWITCH_CLIENT_ID;
+      const origSecret = process.env.TWITCH_CLIENT_SECRET;
+      process.env.TWITCH_CLIENT_ID = 'test-id';
+      delete process.env.TWITCH_CLIENT_SECRET;
+      expect(isIgdbConfigured()).toBe(false);
+      if (origId) process.env.TWITCH_CLIENT_ID = origId; else delete process.env.TWITCH_CLIENT_ID;
+      if (origSecret) process.env.TWITCH_CLIENT_SECRET = origSecret;
+    });
+
+    test('returns true when both credentials are set', () => {
+      const origId = process.env.TWITCH_CLIENT_ID;
+      const origSecret = process.env.TWITCH_CLIENT_SECRET;
+      process.env.TWITCH_CLIENT_ID = 'test-id';
+      process.env.TWITCH_CLIENT_SECRET = 'test-secret';
+      expect(isIgdbConfigured()).toBe(true);
+      if (origId) process.env.TWITCH_CLIENT_ID = origId; else delete process.env.TWITCH_CLIENT_ID;
+      if (origSecret) process.env.TWITCH_CLIENT_SECRET = origSecret; else delete process.env.TWITCH_CLIENT_SECRET;
     });
   });
 

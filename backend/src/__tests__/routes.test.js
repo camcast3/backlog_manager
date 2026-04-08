@@ -426,10 +426,41 @@ describe('GET /api/search/covers', () => {
     expect(res.statusCode).toBe(400);
   });
 
-  test('returns 200 with results (empty without IGDB credentials)', async () => {
+  test('returns warning and empty results without IGDB credentials', async () => {
+    const origId = process.env.TWITCH_CLIENT_ID;
+    const origSecret = process.env.TWITCH_CLIENT_SECRET;
+    delete process.env.TWITCH_CLIENT_ID;
+    delete process.env.TWITCH_CLIENT_SECRET;
     const res = await app.inject({ method: 'GET', url: '/api/search/covers?q=mario' });
     expect(res.statusCode).toBe(200);
     const body = res.json();
-    expect(Array.isArray(body.results)).toBe(true);
+    expect(body.results).toEqual([]);
+    expect(body.warning).toMatch(/IGDB not configured/);
+    if (origId) process.env.TWITCH_CLIENT_ID = origId;
+    if (origSecret) process.env.TWITCH_CLIENT_SECRET = origSecret;
+  });
+});
+
+describe('GET /api/search/status', () => {
+  test('returns hltb: true always', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/search/status' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.hltb).toBe(true);
+    expect(typeof body.igdb).toBe('boolean');
+    expect(typeof body.message).toBe('string');
+  });
+
+  test('returns igdb: false and helpful message when credentials missing', async () => {
+    const origId = process.env.TWITCH_CLIENT_ID;
+    const origSecret = process.env.TWITCH_CLIENT_SECRET;
+    delete process.env.TWITCH_CLIENT_ID;
+    delete process.env.TWITCH_CLIENT_SECRET;
+    const res = await app.inject({ method: 'GET', url: '/api/search/status' });
+    const body = res.json();
+    expect(body.igdb).toBe(false);
+    expect(body.message).toMatch(/TWITCH_CLIENT_ID/);
+    if (origId) process.env.TWITCH_CLIENT_ID = origId;
+    if (origSecret) process.env.TWITCH_CLIENT_SECRET = origSecret;
   });
 });
