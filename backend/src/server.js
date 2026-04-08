@@ -5,6 +5,7 @@ import 'dotenv/config';
 import gamesRoutes from './routes/games.js';
 import backlogRoutes from './routes/backlog.js';
 import progressRoutes from './routes/progress.js';
+import vibeQuestionsRoutes from './routes/vibeQuestions.js';
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 const HOST = process.env.HOST ?? '0.0.0.0';
@@ -27,6 +28,7 @@ export function buildServer(opts = {}) {
   fastify.register(gamesRoutes, { prefix: '/api/games' });
   fastify.register(backlogRoutes, { prefix: '/api/backlog' });
   fastify.register(progressRoutes, { prefix: '/api/progress' });
+  fastify.register(vibeQuestionsRoutes, { prefix: '/api/vibe-questions' });
 
   return fastify;
 }

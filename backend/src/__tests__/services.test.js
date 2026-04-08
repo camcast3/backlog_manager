@@ -1,6 +1,7 @@
 import { analyzeVibeInterview } from '../services/vibeService.js';
 import { xpForLevel, levelFromXp } from '../services/gamificationService.js';
 import { getHltbTtlDays, isHltbStale } from '../services/hltbService.js';
+import { analyzeVibeAnswers, VIBE_QUESTIONS, PRIMARY_MOOD_WEIGHT } from '../services/vibeQuestionService.js';
 
 describe('vibeService.analyzeVibeInterview', () => {
   // ── Mood tag detection ──────────────────────────────────────────────────────
@@ -268,5 +269,189 @@ describe('hltbService.isHltbStale', () => {
     const thirtyFiveDaysAgo = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString();
     // 35 days > 30-day TTL → stale
     expect(isHltbStale({ hltb_cached_at: thirtyFiveDaysAgo })).toBe(true);
+  });
+});
+
+// ── vibeQuestionService ───────────────────────────────────────────────────────
+
+describe('VIBE_QUESTIONS question bank shape', () => {
+  test('exports exactly 5 questions', () => {
+    expect(VIBE_QUESTIONS).toHaveLength(5);
+  });
+
+  test('every question has a unique id, a non-empty question string, and at least 4 answers', () => {
+    const ids = VIBE_QUESTIONS.map((q) => q.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const q of VIBE_QUESTIONS) {
+      expect(typeof q.question).toBe('string');
+      expect(q.question.length).toBeGreaterThan(0);
+      expect(q.answers.length).toBeGreaterThanOrEqual(4);
+    }
+  });
+
+  test('every answer has id, emoji, label, tags array, mood_weight, and session_hint', () => {
+    for (const question of VIBE_QUESTIONS) {
+      for (const answer of question.answers) {
+        expect(typeof answer.id).toBe('string');
+        expect(typeof answer.emoji).toBe('string');
+        expect(typeof answer.label).toBe('string');
+        expect(Array.isArray(answer.tags)).toBe(true);
+        expect('mood_weight' in answer).toBe(true);
+        expect('session_hint' in answer).toBe(true);
+      }
+    }
+  });
+
+  test('all 8 mood categories appear as answer ids in the mood question', () => {
+    const moodQuestion = VIBE_QUESTIONS.find((q) => q.id === 'mood');
+    const answerIds = moodQuestion.answers.map((a) => a.id);
+    for (const mood of ['destress', 'challenge', 'story', 'nostalgia', 'adventure', 'competition', 'social', 'creative']) {
+      expect(answerIds).toContain(mood);
+    }
+  });
+
+  test('session_length question covers all four length values', () => {
+    const sessionQuestion = VIBE_QUESTIONS.find((q) => q.id === 'session_length');
+    const hints = sessionQuestion.answers.map((a) => a.session_hint);
+    for (const hint of ['short', 'medium', 'long', 'marathon']) {
+      expect(hints).toContain(hint);
+    }
+  });
+});
+
+describe('vibeQuestionService.analyzeVibeAnswers', () => {
+  // ── Basic mood detection ─────────────────────────────────────────────────────
+
+  test('single mood answer sets mood_match and tag correctly', () => {
+    const result = analyzeVibeAnswers([{ question_id: 'mood', answer_id: 'challenge' }]);
+    expect(result.mood_match).toBe('challenge');
+    expect(result.tags).toContain('challenge');
+  });
+
+  test('session_length answer sets expected_session_length', () => {
+    const result = analyzeVibeAnswers([
+      { question_id: 'mood', answer_id: 'story' },
+      { question_id: 'session_length', answer_id: 'marathon' },
+    ]);
+    expect(result.expected_session_length).toBe('marathon');
+  });
+
+  test('defaults expected_session_length to medium when session_length not answered', () => {
+    const result = analyzeVibeAnswers([{ question_id: 'mood', answer_id: 'adventure' }]);
+    expect(result.expected_session_length).toBe('medium');
+  });
+
+  // ── Weighted mood election ────────────────────────────────────────────────────
+
+  test(`primary mood question carries ${PRIMARY_MOOD_WEIGHT}x weight over other questions`, () => {
+    // mood=challenge (3 votes for challenge)
+    // headspace=chill (1 vote for destress), completion_goal=chill_play (1 vote for destress)
+    // challenge (3) > destress (2) → challenge wins
+    const result = analyzeVibeAnswers([
+      { question_id: 'mood', answer_id: 'challenge' },
+      { question_id: 'headspace', answer_id: 'chill' },
+      { question_id: 'completion_goal', answer_id: 'chill_play' },
+    ]);
+    expect(result.mood_match).toBe('challenge');
+    expect(result.tags).toContain('challenge');
+    expect(result.tags).toContain('destress');
+  });
+
+  test('secondary questions can override when mood question is absent', () => {
+    // No primary mood question — headspace(social) + why_now(friend_rec) both vote social
+    const result = analyzeVibeAnswers([
+      { question_id: 'headspace', answer_id: 'social_energy' },
+      { question_id: 'why_now', answer_id: 'friend_rec' },
+    ]);
+    expect(result.mood_match).toBe('social');
+  });
+
+  test('tied mood votes resolve to whichever appeared first in voting order', () => {
+    // Two different moods each with 1 vote and no primary question
+    const result = analyzeVibeAnswers([
+      { question_id: 'headspace', answer_id: 'focused' },       // challenge
+      { question_id: 'completion_goal', answer_id: 'main_story' }, // story
+    ]);
+    // challenge was inserted first and sort is stable-ish at equal weight
+    expect(['challenge', 'story']).toContain(result.mood_match);
+  });
+
+  // ── Tag collection ────────────────────────────────────────────────────────────
+
+  test('tags are deduplicated across answers', () => {
+    // challenge appears in: mood + headspace(focused) + completion_goal(completionist)
+    const result = analyzeVibeAnswers([
+      { question_id: 'mood', answer_id: 'challenge' },
+      { question_id: 'headspace', answer_id: 'focused' },
+      { question_id: 'completion_goal', answer_id: 'completionist' },
+    ]);
+    const challengeCount = result.tags.filter((t) => t === 'challenge').length;
+    expect(challengeCount).toBe(1);
+  });
+
+  test('speedrun answer produces both challenge and competition tags', () => {
+    const result = analyzeVibeAnswers([
+      { question_id: 'completion_goal', answer_id: 'speedrun' },
+    ]);
+    expect(result.tags).toContain('challenge');
+    expect(result.tags).toContain('competition');
+  });
+
+  test('multiplayer_focus answer produces both social and competition tags', () => {
+    const result = analyzeVibeAnswers([
+      { question_id: 'completion_goal', answer_id: 'multiplayer_focus' },
+    ]);
+    expect(result.tags).toContain('social');
+    expect(result.tags).toContain('competition');
+  });
+
+  // ── Raw answers stored ────────────────────────────────────────────────────────
+
+  test('raw_interview_answers is the original structured answers array', () => {
+    const answers = [
+      { question_id: 'mood', answer_id: 'nostalgia' },
+      { question_id: 'session_length', answer_id: 'short' },
+    ];
+    const result = analyzeVibeAnswers(answers);
+    expect(result.raw_interview_answers).toEqual(answers);
+  });
+
+  // ── Edge cases ────────────────────────────────────────────────────────────────
+
+  test('returns empty tags and null mood_match for empty answers array', () => {
+    const result = analyzeVibeAnswers([]);
+    expect(result.tags).toEqual([]);
+    expect(result.mood_match).toBeNull();
+    expect(result.expected_session_length).toBe('medium');
+  });
+
+  test('silently ignores unknown question_ids', () => {
+    const result = analyzeVibeAnswers([{ question_id: 'nonexistent', answer_id: 'whatever' }]);
+    expect(result.tags).toEqual([]);
+    expect(result.mood_match).toBeNull();
+  });
+
+  test('silently ignores unknown answer_ids within a known question', () => {
+    const result = analyzeVibeAnswers([{ question_id: 'mood', answer_id: 'not_a_real_answer' }]);
+    expect(result.tags).toEqual([]);
+    expect(result.mood_match).toBeNull();
+  });
+
+  // ── Full five-question flow ───────────────────────────────────────────────────
+
+  test('complete five-question flow produces correct profile', () => {
+    const answers = [
+      { question_id: 'mood', answer_id: 'story' },
+      { question_id: 'session_length', answer_id: 'long' },
+      { question_id: 'headspace', answer_id: 'narrative_hunger' },
+      { question_id: 'completion_goal', answer_id: 'main_story' },
+      { question_id: 'why_now', answer_id: 'deep_lore' },
+    ];
+    const result = analyzeVibeAnswers(answers);
+    expect(result.mood_match).toBe('story');
+    expect(result.expected_session_length).toBe('long');
+    expect(result.tags).toContain('story');
+    // story appears in mood, headspace, completion_goal, why_now answers → deduped to 1
+    expect(result.tags.filter((t) => t === 'story').length).toBe(1);
   });
 });

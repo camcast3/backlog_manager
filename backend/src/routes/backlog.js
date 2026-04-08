@@ -1,6 +1,7 @@
 import getDb from '../db/index.js';
 import { onGameAdded, onStatusChanged } from '../services/gamificationService.js';
 import { analyzeVibeInterview, getStalenessAlerts, recordStalenessResponse } from '../services/vibeService.js';
+import { analyzeVibeAnswers } from '../services/vibeQuestionService.js';
 
 export default async function backlogRoutes(fastify) {
   const sql = getDb();
@@ -110,7 +111,7 @@ export default async function backlogRoutes(fastify) {
   fastify.post('/', async (req, reply) => {
     const {
       game_id, status, priority, personal_notes,
-      why_i_want_to_play, interview_answers,
+      why_i_want_to_play, interview_answers, vibe_answers,
     } = req.body;
 
     if (!game_id) { reply.code(400); return { error: 'game_id is required' }; }
@@ -130,9 +131,13 @@ export default async function backlogRoutes(fastify) {
       RETURNING *
     `;
 
-    // Generate vibe profile from the interview
-    if (why_i_want_to_play || interview_answers) {
-      const vibe = analyzeVibeInterview(why_i_want_to_play, interview_answers ?? {});
+    // Generate vibe profile — structured quick-answers take priority over free text
+    const hasStructured = Array.isArray(vibe_answers) && vibe_answers.length > 0;
+    const hasText = why_i_want_to_play || interview_answers;
+    if (hasStructured || hasText) {
+      const vibe = hasStructured
+        ? analyzeVibeAnswers(vibe_answers)
+        : analyzeVibeInterview(why_i_want_to_play, interview_answers ?? {});
       await sql`
         INSERT INTO vibe_profiles (backlog_item_id, tags, mood_match, expected_session_length, raw_interview_answers)
         VALUES (

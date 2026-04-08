@@ -337,3 +337,47 @@ describe('GET /api/progress/activity', () => {
     expect(body[0].achievement_title).toBe('First Game');
   });
 });
+
+// ── Vibe questions route ──────────────────────────────────────────────────────
+describe('GET /api/vibe-questions', () => {
+  test('returns 200 with all 5 questions', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/vibe-questions' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body).toHaveLength(5);
+  });
+
+  test('each question has id, question text, type, and answers array', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/vibe-questions' });
+    for (const q of res.json()) {
+      expect(typeof q.id).toBe('string');
+      expect(typeof q.question).toBe('string');
+      expect(typeof q.type).toBe('string');
+      expect(Array.isArray(q.answers)).toBe(true);
+    }
+  });
+
+  test('mood question contains all 8 mood answer options', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/vibe-questions' });
+    const moodQ = res.json().find((q) => q.id === 'mood');
+    expect(moodQ).toBeDefined();
+    expect(moodQ.answers).toHaveLength(8);
+    const ids = moodQ.answers.map((a) => a.id);
+    for (const mood of ['destress', 'challenge', 'story', 'nostalgia', 'adventure', 'competition', 'social', 'creative']) {
+      expect(ids).toContain(mood);
+    }
+  });
+
+  test('every answer has emoji and label fields for UI rendering', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/vibe-questions' });
+    for (const question of res.json()) {
+      for (const answer of question.answers) {
+        expect(typeof answer.emoji).toBe('string');
+        expect(answer.emoji.length).toBeGreaterThan(0);
+        expect(typeof answer.label).toBe('string');
+        expect(answer.label.length).toBeGreaterThan(0);
+      }
+    }
+  });
+});
