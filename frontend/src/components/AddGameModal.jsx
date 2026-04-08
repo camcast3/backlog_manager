@@ -3,10 +3,19 @@ import { gamesApi, backlogApi, searchApi } from '../services/api';
 import { useToast } from '../context/ToastContext';
 
 const PLATFORMS = [
-  'PlayStation 5', 'PlayStation 4', 'Xbox Series X/S', 'Xbox One',
-  'Nintendo Switch', 'PC (Steam)', 'PC (Epic)', 'PC (GOG)', 'PC (Other)',
-  'iOS', 'Android', 'PlayStation 3', 'Xbox 360', 'Nintendo Wii U',
-  'Nintendo 3DS', 'Game Boy Advance', 'Retro / Other',
+  // PlayStation
+  'PlayStation 5', 'PlayStation 4', 'PlayStation 3', 'PlayStation 2', 'PlayStation 1', 'PS Vita', 'PSP',
+  // Xbox
+  'Xbox Series X/S', 'Xbox One', 'Xbox 360', 'Xbox',
+  // Nintendo
+  'Nintendo Switch 2', 'Nintendo Switch', 'Wii U', 'Wii', 'Nintendo 3DS', 'Nintendo DS', 'Game Boy Advance',
+  'GameCube', 'Nintendo 64', 'SNES', 'NES',
+  // PC
+  'PC (Steam)', 'PC (Epic)', 'PC (GOG)', 'PC (Other)',
+  // Mobile
+  'iOS', 'Android',
+  // Other
+  'Sega Dreamcast', 'Sega Genesis', 'Atari', 'Neo Geo', 'Other',
 ];
 
 const VIBE_QUESTIONS = [
