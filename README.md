@@ -25,7 +25,7 @@ A gamified video game backlog manager that tracks games from **all platforms** (
 | Layer | Technology |
 |---|---|
 | Frontend | React 18 + React Router v6, Vite 5 |
-| Backend | Node.js + Fastify 4 |
+| Backend | Node.js + Fastify 5 |
 | Database | PostgreSQL 16 |
 | Container | Docker + Docker Compose |
 
