@@ -387,7 +387,7 @@ describe('GET /api/search/games', () => {
   test('returns 400 when q is missing', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/search/games' });
     expect(res.statusCode).toBe(400);
-    expect(res.json().error).toMatch(/at least 2 characters/);
+    expect(res.json().error).toMatch(/2.*200 characters/);
   });
 
   test('returns 400 when q is too short', async () => {

@@ -16,9 +16,9 @@ export default async function searchRoutes(fastify) {
   // Combined search: HLTB times + IGDB covers merged
   fastify.get('/games', async (request, reply) => {
     const { q } = request.query;
-    if (!q || q.trim().length < 2) {
+    if (!q || q.trim().length < 2 || q.trim().length > 200) {
       reply.code(400);
-      return { error: 'Query parameter "q" must be at least 2 characters' };
+      return { error: 'Query parameter "q" must be 2–200 characters' };
     }
     const results = await searchGames(q);
     const response = { query: q, count: results.length, results };
@@ -31,9 +31,9 @@ export default async function searchRoutes(fastify) {
   // HLTB-only search
   fastify.get('/hltb', async (request, reply) => {
     const { q } = request.query;
-    if (!q || q.trim().length < 2) {
+    if (!q || q.trim().length < 2 || q.trim().length > 200) {
       reply.code(400);
-      return { error: 'Query parameter "q" must be at least 2 characters' };
+      return { error: 'Query parameter "q" must be 2–200 characters' };
     }
     const results = await searchHltb(q);
     return { query: q, count: results.length, results };
@@ -42,9 +42,9 @@ export default async function searchRoutes(fastify) {
   // IGDB cover-only search
   fastify.get('/covers', async (request, reply) => {
     const { q } = request.query;
-    if (!q || q.trim().length < 2) {
+    if (!q || q.trim().length < 2 || q.trim().length > 200) {
       reply.code(400);
-      return { error: 'Query parameter "q" must be at least 2 characters' };
+      return { error: 'Query parameter "q" must be 2–200 characters' };
     }
     if (!isIgdbConfigured()) {
       return { query: q, count: 0, results: [], warning: 'IGDB not configured — set TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET' };

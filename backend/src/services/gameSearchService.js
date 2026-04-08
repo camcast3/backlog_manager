@@ -7,7 +7,8 @@
  */
 
 const HLTB_BASE = 'https://howlongtobeat.com';
-const HLTB_SEARCH_URL = `${HLTB_BASE}/api/search`;
+const HLTB_FIND_URL = `${HLTB_BASE}/api/find`;
+const HLTB_INIT_URL = `${HLTB_BASE}/api/find/init`;
 const HLTB_IMAGE_BASE = `${HLTB_BASE}/games/`;
 
 const IGDB_BASE = 'https://api.igdb.com/v4';
@@ -62,10 +63,38 @@ export function isIgdbConfigured() {
   return !!(process.env.TWITCH_CLIENT_ID && process.env.TWITCH_CLIENT_SECRET);
 }
 
+// ── HLTB Search Token Management ───────────────────────────────
+
+let hltbToken = null;
+let hltbHpKey = null;
+let hltbHpVal = null;
+
+/**
+ * Fetch a fresh HLTB search token from /api/find/init.
+ * The token + honeypot key/value are required for every search request.
+ * Tokens expire server-side; on 403 the caller should refresh and retry.
+ */
+async function refreshHltbToken() {
+  try {
+    const res = await fetch(`${HLTB_INIT_URL}?t=${Date.now()}`, {
+      headers: { 'User-Agent': UA, 'Origin': HLTB_BASE, 'Referer': `${HLTB_BASE}/` },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    hltbToken = data.token;
+    hltbHpKey = data.hpKey;
+    hltbHpVal = data.hpVal;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 // ── HLTB Search ────────────────────────────────────────────────
 
-function buildHltbPayload(searchTerms) {
-  return {
+function buildHltbPayload(searchTerms, hpKey, hpVal) {
+  const payload = {
     searchType: 'games',
     searchTerms: searchTerms.split(' ').filter(Boolean),
     searchPage: 1,
@@ -77,15 +106,21 @@ function buildHltbPayload(searchTerms) {
         sortCategory: 'popular',
         rangeCategory: 'main',
         rangeTime: { min: 0, max: 0 },
-        gameplay: { perspective: '', flow: '', genre: '' },
+        gameplay: { perspective: '', flow: '', genre: '', difficulty: '' },
+        rangeYear: { min: 0, max: 0 },
         modifier: '',
       },
       users: { sortCategory: 'postcount' },
+      lists: { sortCategory: 'postcount' },
       filter: '',
       sort: 0,
       randomizer: 0,
     },
+    useCache: true,
   };
+  // Inject honeypot field into body (required by HLTB anti-bot)
+  if (hpKey) payload[hpKey] = hpVal;
+  return payload;
 }
 
 function normalizeHltbEntry(entry) {
@@ -94,7 +129,7 @@ function normalizeHltbEntry(entry) {
     title: entry.game_name,
     image_url: entry.game_image ? `${HLTB_IMAGE_BASE}${entry.game_image}` : null,
     platforms: entry.profile_platform ? entry.profile_platform.split(', ') : [],
-    release_year: entry.release_world ? new Date(entry.release_world * 1000).getFullYear() : null,
+    release_year: entry.release_world > 0 ? new Date(entry.release_world * 1000).getFullYear() : null,
     hltb_main_story: entry.comp_main ? Math.round(entry.comp_main / 3600) : null,
     hltb_main_plus_extras: entry.comp_plus ? Math.round(entry.comp_plus / 3600) : null,
     hltb_completionist: entry.comp_100 ? Math.round(entry.comp_100 / 3600) : null,
@@ -105,23 +140,45 @@ function normalizeHltbEntry(entry) {
 
 /**
  * Search HLTB for games matching the query. Returns normalized results.
+ * Uses /api/find with token-based auth. Auto-refreshes token on 403.
  * Fails gracefully — returns empty array on network/parse errors.
  */
 export async function searchHltb(query) {
   if (!query || query.trim().length < 2) return [];
 
+  // Ensure we have a token
+  if (!hltbToken) {
+    const ok = await refreshHltbToken();
+    if (!ok) return [];
+  }
+
   try {
-    const res = await fetch(HLTB_SEARCH_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': UA,
-        'Origin': HLTB_BASE,
-        'Referer': `${HLTB_BASE}/`,
-      },
-      body: JSON.stringify(buildHltbPayload(query)),
-      signal: AbortSignal.timeout(10_000),
-    });
+    const doSearch = async () => {
+      const res = await fetch(HLTB_FIND_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': UA,
+          'Origin': HLTB_BASE,
+          'Referer': `${HLTB_BASE}/`,
+          'x-auth-token': hltbToken,
+          'x-hp-key': hltbHpKey ?? '',
+          'x-hp-val': hltbHpVal ?? '',
+        },
+        body: JSON.stringify(buildHltbPayload(query, hltbHpKey, hltbHpVal)),
+        signal: AbortSignal.timeout(10_000),
+      });
+      return res;
+    };
+
+    let res = await doSearch();
+
+    // Token expired — refresh and retry once
+    if (res.status === 403) {
+      const ok = await refreshHltbToken();
+      if (!ok) return [];
+      res = await doSearch();
+    }
 
     if (!res.ok) return [];
 
@@ -135,6 +192,7 @@ export async function searchHltb(query) {
 // ── IGDB Cover Search ──────────────────────────────────────────
 
 function buildIgdbCoverUrl(imageId, size = 't_cover_big') {
+  if (!/^[a-zA-Z0-9_-]+$/.test(imageId)) return null;
   return `${IGDB_IMAGE_BASE}/${size}/${imageId}.jpg`;
 }
 
