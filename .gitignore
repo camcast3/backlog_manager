@@ -17,6 +17,7 @@ npm-debug.log*
 # OS artifacts
 .DS_Store
 Thumbs.db
+*.png
 
 # Editor
 .vscode/

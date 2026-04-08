@@ -209,23 +209,23 @@ export default function AddGameModal({ onClose, onAdded }) {
               {showDropdown && searchResults.length > 0 && (
                 <div style={{
                   position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
-                  background: 'var(--card-bg)', border: '1px solid var(--border)',
+                  background: '#1a1a2e', border: '1px solid var(--border)',
                   borderRadius: 8, maxHeight: 320, overflowY: 'auto', marginTop: 4,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
                 }}>
                   {searchResults.map((r, i) => (
                     <button
-                      key={r.hltb_id || r.rawg_id || i}
+                      key={r.hltb_id || r.igdb_id || i}
                       onClick={() => selectSearchResult(r)}
                       style={{
                         display: 'flex', gap: '0.75rem', alignItems: 'center',
                         width: '100%', padding: '0.6rem 0.75rem', border: 'none',
-                        background: 'transparent', cursor: 'pointer', textAlign: 'left',
+                        background: '#1a1a2e', cursor: 'pointer', textAlign: 'left',
                         borderBottom: i < searchResults.length - 1 ? '1px solid var(--border)' : 'none',
                         color: 'var(--text)', fontSize: '0.9rem',
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--hover-bg)'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#16213e'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = '#1a1a2e'}
                     >
                       {(r.cover_image_url || r.image_url) && (
                         <img
@@ -252,10 +252,10 @@ export default function AddGameModal({ onClose, onAdded }) {
               {showDropdown && searchResults.length === 0 && !searching && gameData.title.trim().length >= 2 && (
                 <div style={{
                   position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
-                  background: 'var(--card-bg)', border: '1px solid var(--border)',
+                  background: '#1a1a2e', border: '1px solid var(--border)',
                   borderRadius: 8, padding: '0.75rem', marginTop: 4, textAlign: 'center',
                   color: 'var(--text-muted)', fontSize: '0.85rem',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
                 }}>
                   No results found — you can still enter details manually
                 </div>
