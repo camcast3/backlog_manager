@@ -33,7 +33,7 @@ export default function ProgressPage() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">⭐ My Progress</h1>
+        <h1 className="page-title">Progress</h1>
       </div>
 
       {/* Level card */}
@@ -75,7 +75,7 @@ export default function ProgressPage() {
 
       {/* Earned achievements */}
       <h2 style={{ marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 800 }}>
-        🏆 Achievements ({earned.length} / {achievements.length})
+        Achievements ({earned.length} / {achievements.length})
       </h2>
 
       {earned.length > 0 && (
@@ -87,14 +87,11 @@ export default function ProgressPage() {
         }}>
           {earned.map((a) => (
             <div key={a.id} className="card" style={{ borderColor: '#fbbf24', background: 'rgba(251,191,36,0.06)' }}>
-              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                <span style={{ fontSize: '2rem' }}>{a.icon}</span>
-                <div>
-                  <div style={{ fontWeight: 800 }}>{a.title}</div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{a.description}</div>
-                  <div style={{ fontSize: '0.75rem', color: '#fbbf24', marginTop: '0.2rem' }}>
-                    +{a.xp_reward} XP · Earned {new Date(a.earned_at).toLocaleDateString()}
-                  </div>
+              <div>
+                <div style={{ fontWeight: 800 }}>{a.title}</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{a.description}</div>
+                <div style={{ fontSize: '0.75rem', color: '#fbbf24', marginTop: '0.2rem' }}>
+                  +{a.xp_reward} XP · Earned {new Date(a.earned_at).toLocaleDateString()}
                 </div>
               </div>
             </div>
@@ -106,7 +103,7 @@ export default function ProgressPage() {
       {locked.length > 0 && (
         <>
           <h3 style={{ marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 700 }}>
-            🔒 LOCKED ACHIEVEMENTS
+            LOCKED
           </h3>
           <div style={{
             display: 'grid',
@@ -115,14 +112,11 @@ export default function ProgressPage() {
           }}>
             {locked.map((a) => (
               <div key={a.id} className="card" style={{ opacity: 0.5 }}>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                  <span style={{ fontSize: '2rem', filter: 'grayscale(1)' }}>{a.icon}</span>
-                  <div>
-                    <div style={{ fontWeight: 800 }}>{a.title}</div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{a.description}</div>
-                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                      +{a.xp_reward} XP
-                    </div>
+                <div>
+                  <div style={{ fontWeight: 800 }}>{a.title}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{a.description}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                    +{a.xp_reward} XP
                   </div>
                 </div>
               </div>

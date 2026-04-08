@@ -2,11 +2,11 @@
 import { NavLink } from 'react-router-dom';
 
 const navItems = [
-  { to: '/', icon: '🏠', label: 'Dashboard' },
-  { to: '/backlog', icon: '🎮', label: 'Backlog' },
-  { to: '/games', icon: '📦', label: 'Game Library' },
-  { to: '/progress', icon: '⭐', label: 'My Progress' },
-  { to: '/settings', icon: '⚙️', label: 'Settings' },
+  { to: '/', label: 'Dashboard' },
+  { to: '/backlog', label: 'Backlog' },
+  { to: '/games', label: 'Game Library' },
+  { to: '/progress', label: 'Progress' },
+  { to: '/settings', label: 'Settings' },
 ];
 
 const navStyle = {
@@ -52,15 +52,14 @@ const activeLinkStyle = {
 export default function Nav() {
   return (
     <nav style={navStyle}>
-      <div style={logoStyle}>🎮 Backlog Manager</div>
-      {navItems.map(({ to, icon, label }) => (
+      <div style={logoStyle}>Backlog Manager</div>
+      {navItems.map(({ to, label }) => (
         <NavLink
           key={to}
           to={to}
           end={to === '/'}
           style={({ isActive }) => (isActive ? activeLinkStyle : linkStyle)}
         >
-          <span>{icon}</span>
           <span>{label}</span>
         </NavLink>
       ))}

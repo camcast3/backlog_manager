@@ -6,12 +6,12 @@ export default function SettingsPage() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">⚙️ Settings</h1>
+        <h1 className="page-title">Settings</h1>
       </div>
 
       {/* Theme Selection */}
       <div className="card" style={{ marginBottom: '1.5rem' }}>
-        <h3 style={{ marginBottom: '1rem', fontWeight: 700 }}>🎨 Theme</h3>
+        <h3 style={{ marginBottom: '1rem', fontWeight: 700 }}>Theme</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem' }}>
           {Object.entries(THEMES).map(([key, t]) => (
             <button
@@ -40,25 +40,25 @@ export default function SettingsPage() {
 
       {/* About */}
       <div className="card" style={{ marginBottom: '1.5rem' }}>
-        <h3 style={{ marginBottom: '1rem', fontWeight: 700 }}>📖 About</h3>
+        <h3 style={{ marginBottom: '1rem', fontWeight: 700 }}>About</h3>
         <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1.8 }}>
           <p><strong>Backlog Manager</strong> — a gamified tool to track your video game backlog.</p>
           <p style={{ marginTop: '0.5rem' }}>
-            🎮 Track games across all platforms<br />
-            ⏱️ HLTB integration for time-to-beat<br />
-            🖼️ IGDB covers and metadata<br />
-            🏆 Earn XP and achievements<br />
-            💬 Vibe profiles to remember why you wanted to play
+            Track games across all platforms<br />
+            HLTB integration for time-to-beat<br />
+            IGDB covers and metadata<br />
+            Earn XP and achievements<br />
+            Vibe profiles to remember why you wanted to play
           </p>
         </div>
       </div>
 
-      {/* Keyboard Shortcuts */}
+      {/* Tips */}
       <div className="card">
-        <h3 style={{ marginBottom: '1rem', fontWeight: 700 }}>⌨️ Tips</h3>
+        <h3 style={{ marginBottom: '1rem', fontWeight: 700 }}>Tips</h3>
         <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: 2 }}>
           <div>• Click a backlog item to expand details</div>
-          <div>• Use the ✏️ button to edit game info after adding</div>
+          <div>• Use the edit button to edit game info after adding</div>
           <div>• Status transitions are context-aware (e.g., you can only pause a game you're playing)</div>
           <div>• Staleness alerts appear on the dashboard when games go untouched for 3+ months</div>
           <div>• Completing and adding games earns XP toward your next level</div>

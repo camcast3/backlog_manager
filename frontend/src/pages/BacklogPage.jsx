@@ -5,6 +5,7 @@ import VibeBadge from '../components/VibeBadge';
 import HltbInfo from '../components/HltbInfo';
 import AddGameModal from '../components/AddGameModal';
 import EditGameModal from '../components/EditGameModal';
+import GamePicker from '../components/GamePicker';
 import { useToast } from '../context/ToastContext';
 
 const STATUS_OPTIONS = [
@@ -37,6 +38,7 @@ export default function BacklogPage() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [showPicker, setShowPicker] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [updatingId, setUpdatingId] = useState(null);
   const [filters, setFilters] = useState({ status: 'want_to_play', sort: 'priority' });
@@ -66,8 +68,8 @@ export default function BacklogPage() {
       const result = await backlogApi.update(item.id, { status: newStatus });
       if (result.gamification) {
         const { newXp, newLevel, leveledUp, newAchievements } = result.gamification;
-        toast(`Status updated to "${newStatus}" 🎮`, 'success');
-        if (leveledUp) toast(`🎉 Level Up! You're now Level ${newLevel}!`, 'achievement', 6000);
+        toast(`Status updated to "${newStatus}"`, 'success');
+        if (leveledUp) toast(`Level Up! You're now Level ${newLevel}!`, 'achievement', 6000);
         for (const a of newAchievements) {
           toast(`${a.icon} Achievement: ${a.title} (+${a.xp_reward} XP)`, 'achievement', 6000);
         }
@@ -94,8 +96,11 @@ export default function BacklogPage() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">🎮 My Backlog</h1>
-        <button className="btn-primary" onClick={() => setShowAddModal(true)}>+ Add Game</button>
+        <h1 className="page-title">My Backlog</h1>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button className="btn-secondary" onClick={() => setShowPicker(true)}>Pick For Me</button>
+          <button className="btn-primary" onClick={() => setShowAddModal(true)}>+ Add Game</button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -135,7 +140,7 @@ export default function BacklogPage() {
 
       {!loading && items.length === 0 && (
         <div className="empty-state">
-          <div className="empty-icon">🎮</div>
+          <div className="empty-icon" style={{ fontSize: '2rem', color: 'var(--text-muted)' }}>—</div>
           <p>No games here yet — add one!</p>
         </div>
       )}
@@ -182,11 +187,11 @@ export default function BacklogPage() {
                   onClick={(e) => { e.stopPropagation(); updateStatus(item, newStatus); }}
                   disabled={updatingId === item.id}
                 >
-                  {newStatus === 'completed' ? '✅ Complete' :
-                   newStatus === 'playing' ? '▶️ Start' :
-                   newStatus === 'dropped' ? '🚮 Drop' :
-                   newStatus === 'on_hold' ? '⏸ Pause' :
-                   newStatus === 'want_to_play' ? '🔄 Re-add' : newStatus}
+                  {newStatus === 'completed' ? 'Complete' :
+                   newStatus === 'playing' ? 'Start' :
+                   newStatus === 'dropped' ? 'Drop' :
+                   newStatus === 'on_hold' ? 'Pause' :
+                   newStatus === 'want_to_play' ? 'Re-add' : newStatus}
                 </button>
               ))}
               <button
@@ -260,6 +265,13 @@ export default function BacklogPage() {
           item={editingItem}
           onClose={() => setEditingItem(null)}
           onUpdated={() => loadItems()}
+        />
+      )}
+
+      {showPicker && (
+        <GamePicker
+          games={items.filter((i) => i.status === 'want_to_play' || i.status === 'playing')}
+          onClose={() => setShowPicker(false)}
         />
       )}
     </div>

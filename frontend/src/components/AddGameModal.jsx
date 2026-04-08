@@ -1,27 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { gamesApi, backlogApi, searchApi } from '../services/api';
 import { useToast } from '../context/ToastContext';
-
-const PLATFORMS = [
-  // PlayStation
-  'PlayStation 5', 'PlayStation 4', 'PlayStation 3', 'PlayStation 2', 'PlayStation 1', 'PS Vita', 'PSP',
-  // Xbox
-  'Xbox Series X/S', 'Xbox One', 'Xbox 360', 'Xbox',
-  // Nintendo
-  'Nintendo Switch 2', 'Nintendo Switch', 'Wii U', 'Wii', 'Nintendo 3DS', 'Nintendo DS', 'Game Boy Advance',
-  'GameCube', 'Nintendo 64', 'SNES', 'NES',
-  // PC
-  'PC (Steam)', 'PC (Epic)', 'PC (GOG)', 'PC (Other)',
-  // Sega
-  'Sega Dreamcast', 'Sega Genesis',
-  // Other
-  'Atari', 'Neo Geo', 'Other',
-];
+import { PLATFORMS, VIBE_INTENSITIES, STORY_PACES } from '../constants';
 
 const VIBE_QUESTIONS = [
-  { key: 'mood', label: '🧠 What mood are you in when you imagine playing this?', placeholder: 'e.g. I want to relax, I\'m craving a challenge, I want a good story...' },
-  { key: 'session', label: '⏱️ How long do you picture a typical session being?', placeholder: 'e.g. 30 min lunch breaks, long weekend sessions, quick before bed...' },
-  { key: 'why', label: '❓ Why did this game catch your eye?', placeholder: 'e.g. friends recommended it, saw gameplay on YouTube, loved a similar game...' },
+  { key: 'mood', label: 'What mood are you in when you imagine playing this?', placeholder: 'e.g. I want to relax, I\'m craving a challenge, I want a good story...' },
+  { key: 'session', label: 'How long do you picture a typical session being?', placeholder: 'e.g. 30 min lunch breaks, long weekend sessions, quick before bed...' },
+  { key: 'why', label: 'Why did this game catch your eye?', placeholder: 'e.g. friends recommended it, saw gameplay on YouTube, loved a similar game...' },
 ];
 
 export default function AddGameModal({ onClose, onAdded }) {
@@ -153,10 +138,10 @@ export default function AddGameModal({ onClose, onAdded }) {
       // Show gamification rewards
       if (result.gamification) {
         const { newXp, newLevel, leveledUp, newAchievements } = result.gamification;
-        toast(`+20 XP 🎮 Added "${game.title}" to your backlog!`, 'success');
-        if (leveledUp) toast(`🎉 Level Up! You're now Level ${newLevel}!`, 'achievement', 6000);
+        toast(`+20 XP — Added "${game.title}" to your backlog!`, 'success');
+        if (leveledUp) toast(`Level Up! You're now Level ${newLevel}!`, 'achievement', 6000);
         for (const a of newAchievements) {
-          toast(`${a.icon} Achievement Unlocked: ${a.title} (+${a.xp_reward} XP)`, 'achievement', 6000);
+          toast(`Achievement Unlocked: ${a.title} (+${a.xp_reward} XP)`, 'achievement', 6000);
         }
       }
 
@@ -174,7 +159,7 @@ export default function AddGameModal({ onClose, onAdded }) {
       <div className="modal">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h2 className="modal-title" style={{ margin: 0 }}>
-            {step === 1 ? '🎮 Add Game' : '💬 Vibe Interview'}
+            {step === 1 ? 'Add Game' : 'Vibe Interview'}
           </h2>
           <button onClick={onClose} style={{ background: 'none', color: 'var(--text-muted)', fontSize: '1.25rem' }}>✕</button>
         </div>
@@ -196,7 +181,7 @@ export default function AddGameModal({ onClose, onAdded }) {
                 borderRadius: 8, padding: '0.6rem 0.75rem', marginBottom: '1rem',
                 fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: 1.5,
               }}>
-                ⚠️ IGDB not configured — cover images won't auto-fill. HLTB search still works!
+                IGDB not configured — cover images won't auto-fill. HLTB search still works!
                 <br />Set <code>TWITCH_CLIENT_ID</code> and <code>TWITCH_CLIENT_SECRET</code> in your backend .env file.
               </div>
             )}
@@ -211,7 +196,7 @@ export default function AddGameModal({ onClose, onAdded }) {
                   autoComplete="off"
                 />
                 {searching && (
-                  <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', color: 'var(--text-muted)' }}>🔍</span>
+                  <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', color: 'var(--text-muted)' }}>...</span>
                 )}
               </div>
 
@@ -247,10 +232,10 @@ export default function AddGameModal({ onClose, onAdded }) {
                       <div style={{ minWidth: 0 }}>
                         <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.title}</div>
                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                          {r.release_year && <span>📅 {r.release_year}</span>}
-                          {r.platforms?.length > 0 && <span>🎮 {r.platforms.slice(0, 3).join(', ')}</span>}
-                          {r.hltb_main_story && <span>⏱️ {r.hltb_main_story}h</span>}
-                          {r.developer && <span>🏢 {r.developer}</span>}
+                          {r.release_year && <span>{r.release_year}</span>}
+                          {r.platforms?.length > 0 && <span>{r.platforms.slice(0, 3).join(', ')}</span>}
+                          {r.hltb_main_story && <span>{r.hltb_main_story}h</span>}
+                          {r.developer && <span>{r.developer}</span>}
                           {r.source === 'hltb' && <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>HLTB only</span>}
                         </div>
                       </div>
@@ -320,7 +305,7 @@ export default function AddGameModal({ onClose, onAdded }) {
             </div>
 
             <fieldset style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '1rem', marginBottom: '1rem' }}>
-              <legend style={{ color: 'var(--text-muted)', padding: '0 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}>⏱️ How Long To Beat (hours)</legend>
+              <legend style={{ color: 'var(--text-muted)', padding: '0 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}>How Long To Beat (hours)</legend>
               <div className="grid-3">
                 <div className="form-group">
                   <label>Main Story</label>
@@ -338,24 +323,22 @@ export default function AddGameModal({ onClose, onAdded }) {
             </fieldset>
 
             <fieldset style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '1rem', marginBottom: '1rem' }}>
-              <legend style={{ color: 'var(--text-muted)', padding: '0 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}>🎭 Game Vibe</legend>
+              <legend style={{ color: 'var(--text-muted)', padding: '0 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}>Game Vibe</legend>
               <div className="grid-2">
                 <div className="form-group">
                   <label>Intensity</label>
                   <select value={gameData.vibe_intensity} onChange={(e) => gSet('vibe_intensity', e.target.value)}>
-                    <option value="chill">😌 Chill (PowerWash Simulator)</option>
-                    <option value="moderate">🎯 Moderate</option>
-                    <option value="intense">🔥 Intense (Dark Souls)</option>
-                    <option value="brutal">💀 Brutal (Elden Ring DLC)</option>
+                    {VIBE_INTENSITIES.map(({ value, label }) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="form-group">
                   <label>Story Pace</label>
                   <select value={gameData.vibe_story_pace} onChange={(e) => gSet('vibe_story_pace', e.target.value)}>
-                    <option value="minimal">Minimal story</option>
-                    <option value="slow_burn">Slow burn (worth the wait)</option>
-                    <option value="steady">Steady</option>
-                    <option value="fast_paced">Fast paced</option>
+                    {STORY_PACES.map(({ value, label }) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -386,7 +369,7 @@ export default function AddGameModal({ onClose, onAdded }) {
             </p>
 
             <div className="form-group">
-              <label>✨ Why do you want to play this game? (the short version)</label>
+              <label>Why do you want to play this game? (the short version)</label>
               <textarea
                 value={backlogData.why_i_want_to_play}
                 onChange={(e) => bSet('why_i_want_to_play', e.target.value)}
@@ -407,7 +390,7 @@ export default function AddGameModal({ onClose, onAdded }) {
             ))}
 
             <div className="form-group">
-              <label>📊 Priority (1 = low, 100 = must play ASAP)</label>
+              <label>Priority (1 = low, 100 = must play ASAP)</label>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 <input
                   type="range" min="1" max="100"
@@ -420,7 +403,7 @@ export default function AddGameModal({ onClose, onAdded }) {
             </div>
 
             <div className="form-group">
-              <label>📝 Personal Notes (optional)</label>
+              <label>Personal Notes (optional)</label>
               <textarea
                 value={backlogData.personal_notes}
                 onChange={(e) => bSet('personal_notes', e.target.value)}
@@ -432,7 +415,7 @@ export default function AddGameModal({ onClose, onAdded }) {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
               <button className="btn-secondary" onClick={() => setStep(1)}>← Back</button>
               <button className="btn-success" onClick={handleSubmit} disabled={loading}>
-                {loading ? 'Adding...' : '🎮 Add to Backlog!'}
+                {loading ? 'Adding...' : 'Add to Backlog'}
               </button>
             </div>
           </>

@@ -328,7 +328,7 @@ describe('GET /api/progress/achievements', () => {
 describe('GET /api/progress/activity', () => {
   test('returns 200 with recent activity feed', async () => {
     queryQueue.push([
-      { earned_at: '2026-01-01', achievement_title: 'First Game', icon: '🎮', xp_reward: 50, context: {} },
+      { earned_at: '2026-01-01', achievement_title: 'First Game', icon: '', xp_reward: 50, context: {} },
     ]);
     const res = await app.inject({ method: 'GET', url: '/api/progress/activity' });
     expect(res.statusCode).toBe(200);

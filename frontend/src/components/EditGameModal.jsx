@@ -1,16 +1,7 @@
 import { useState } from 'react';
 import { gamesApi, backlogApi } from '../services/api';
 import { useToast } from '../context/ToastContext';
-
-const PLATFORMS = [
-  'PlayStation 5', 'PlayStation 4', 'PlayStation 3', 'PlayStation 2', 'PlayStation 1', 'PS Vita', 'PSP',
-  'Xbox Series X/S', 'Xbox One', 'Xbox 360', 'Xbox',
-  'Nintendo Switch 2', 'Nintendo Switch', 'Wii U', 'Wii', 'Nintendo 3DS', 'Nintendo DS', 'Game Boy Advance',
-  'GameCube', 'Nintendo 64', 'SNES', 'NES',
-  'PC (Steam)', 'PC (Epic)', 'PC (GOG)', 'PC (Other)',
-  'Sega Dreamcast', 'Sega Genesis',
-  'Atari', 'Neo Geo', 'Other',
-];
+import { PLATFORMS, VIBE_INTENSITIES, STORY_PACES } from '../constants';
 
 export default function EditGameModal({ item, onClose, onUpdated }) {
   const toast = useToast();
@@ -67,7 +58,7 @@ export default function EditGameModal({ item, onClose, onUpdated }) {
         personal_notes: backlogData.personal_notes,
       });
 
-      toast(`✅ Updated "${gameData.title}"`, 'success');
+      toast(`Updated "${gameData.title}"`, 'success');
       onUpdated();
       onClose();
     } catch (err) {
@@ -81,7 +72,7 @@ export default function EditGameModal({ item, onClose, onUpdated }) {
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: 620 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 className="modal-title" style={{ margin: 0 }}>✏️ Edit Game</h2>
+          <h2 className="modal-title" style={{ margin: 0 }}>Edit Game</h2>
           <button onClick={onClose} style={{ background: 'none', color: 'var(--text-muted)', fontSize: '1.25rem' }}>✕</button>
         </div>
 
@@ -133,7 +124,7 @@ export default function EditGameModal({ item, onClose, onUpdated }) {
         </div>
 
         <fieldset style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '1rem', marginBottom: '1rem' }}>
-          <legend style={{ color: 'var(--text-muted)', padding: '0 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}>⏱️ How Long To Beat (hours)</legend>
+          <legend style={{ color: 'var(--text-muted)', padding: '0 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}>How Long To Beat (hours)</legend>
           <div className="grid-3">
             <div className="form-group">
               <label>Main Story</label>
@@ -151,24 +142,22 @@ export default function EditGameModal({ item, onClose, onUpdated }) {
         </fieldset>
 
         <fieldset style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '1rem', marginBottom: '1rem' }}>
-          <legend style={{ color: 'var(--text-muted)', padding: '0 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}>🎭 Game Vibe</legend>
+          <legend style={{ color: 'var(--text-muted)', padding: '0 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}>Game Vibe</legend>
           <div className="grid-2">
             <div className="form-group">
               <label>Intensity</label>
               <select value={gameData.vibe_intensity} onChange={(e) => gSet('vibe_intensity', e.target.value)}>
-                <option value="chill">😌 Chill</option>
-                <option value="moderate">🎯 Moderate</option>
-                <option value="intense">🔥 Intense</option>
-                <option value="brutal">💀 Brutal</option>
+                {VIBE_INTENSITIES.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
               </select>
             </div>
             <div className="form-group">
               <label>Story Pace</label>
               <select value={gameData.vibe_story_pace} onChange={(e) => gSet('vibe_story_pace', e.target.value)}>
-                <option value="minimal">Minimal story</option>
-                <option value="slow_burn">Slow burn</option>
-                <option value="steady">Steady</option>
-                <option value="fast_paced">Fast paced</option>
+                {STORY_PACES.map(({ value, label }) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -183,7 +172,7 @@ export default function EditGameModal({ item, onClose, onUpdated }) {
         </fieldset>
 
         <fieldset style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '1rem', marginBottom: '1rem' }}>
-          <legend style={{ color: 'var(--text-muted)', padding: '0 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}>📝 Personal</legend>
+          <legend style={{ color: 'var(--text-muted)', padding: '0 0.5rem', fontSize: '0.85rem', fontWeight: 700 }}>Personal</legend>
           <div className="form-group">
             <label>Why I Want to Play</label>
             <textarea value={backlogData.why_i_want_to_play} onChange={(e) => setBacklogData((d) => ({ ...d, why_i_want_to_play: e.target.value }))} />
@@ -201,7 +190,7 @@ export default function EditGameModal({ item, onClose, onUpdated }) {
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
           <button className="btn-secondary" onClick={onClose}>Cancel</button>
           <button className="btn-primary" onClick={handleSave} disabled={loading}>
-            {loading ? 'Saving...' : '💾 Save Changes'}
+            {loading ? 'Saving...' : 'Save Changes'}
           </button>
         </div>
       </div>

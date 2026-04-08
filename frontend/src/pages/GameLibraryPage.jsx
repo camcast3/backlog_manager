@@ -36,22 +36,22 @@ export default function GameLibraryPage() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">📦 Game Library</h1>
+        <h1 className="page-title">Game Library</h1>
       </div>
 
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.25rem', flexWrap: 'wrap' }}>
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="🔍 Search games..."
+          placeholder="Search games..."
           style={{ maxWidth: 260 }}
         />
         <select value={filterVibe} onChange={(e) => setFilterVibe(e.target.value)} style={{ maxWidth: 180 }}>
           <option value="">All vibes</option>
-          <option value="chill">😌 Chill</option>
-          <option value="moderate">🎯 Moderate</option>
-          <option value="intense">🔥 Intense</option>
-          <option value="brutal">💀 Brutal</option>
+          <option value="chill">Chill</option>
+          <option value="moderate">Moderate</option>
+          <option value="intense">Intense</option>
+          <option value="brutal">Brutal</option>
         </select>
       </div>
 
@@ -59,7 +59,7 @@ export default function GameLibraryPage() {
 
       {!loading && filtered.length === 0 && (
         <div className="empty-state">
-          <div className="empty-icon">📦</div>
+          <div className="empty-icon" style={{ fontSize: '2rem', color: 'var(--text-muted)' }}>—</div>
           <p>No games in library yet — add games through the backlog!</p>
         </div>
       )}

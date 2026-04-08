@@ -39,7 +39,7 @@ export default function StalenessAlert({ staleItems, onDismiss }) {
   return (
     <div style={{ marginBottom: '1.5rem' }}>
       <h3 style={{ color: 'var(--warning)', marginBottom: '0.75rem', fontSize: '1rem' }}>
-        ⏰ Staleness Check — These games haven't been touched in 3+ months
+        Staleness Check — These games haven't been touched in 3+ months
       </h3>
       {staleItems.map((item) => (
         <div key={item.id} className="staleness-alert">

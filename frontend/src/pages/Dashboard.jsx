@@ -4,6 +4,7 @@ import StatusBadge from '../components/StatusBadge';
 import VibeBadge from '../components/VibeBadge';
 import StalenessAlert from '../components/StalenessAlert';
 import AddGameModal from '../components/AddGameModal';
+import GamePicker from '../components/GamePicker';
 import { useToast } from '../context/ToastContext';
 
 export default function Dashboard() {
@@ -13,7 +14,9 @@ export default function Dashboard() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [staleItems, setStaleItems] = useState([]);
   const [playingNow, setPlayingNow] = useState([]);
+  const [allItems, setAllItems] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -35,6 +38,11 @@ export default function Dashboard() {
       setRecentActivity(activity);
       setStaleItems(stale);
       setPlayingNow(items);
+      // Also fetch want_to_play for the game picker
+      try {
+        const wtp = await backlogApi.list({ status: 'want_to_play' });
+        setAllItems([...items, ...wtp]);
+      } catch { setAllItems(items); }
     } catch (err) {
       toast(err.message, 'warning');
     } finally {
@@ -53,8 +61,11 @@ export default function Dashboard() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">🏠 Dashboard</h1>
-        <button className="btn-primary" onClick={() => setShowAddModal(true)}>+ Add Game</button>
+        <h1 className="page-title">Dashboard</h1>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button className="btn-secondary" onClick={() => setShowPicker(true)}>Pick For Me</button>
+          <button className="btn-primary" onClick={() => setShowAddModal(true)}>+ Add Game</button>
+        </div>
       </div>
 
       {/* XP / Level bar */}
@@ -62,7 +73,7 @@ export default function Dashboard() {
         <div className="card" style={{ marginBottom: '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'baseline' }}>
             <span style={{ fontWeight: 800, fontSize: '1.1rem' }}>
-              ⭐ Level {progress.level}
+              Level {progress.level}
             </span>
             <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
               {progress.xp} XP — {progress.xp_to_next_level} XP to Level {progress.level + 1}
@@ -102,7 +113,7 @@ export default function Dashboard() {
       <div className="grid-2">
         {/* Currently playing */}
         <div className="card">
-          <h3 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: 800 }}>🕹️ Playing Now</h3>
+          <h3 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: 800 }}>Playing Now</h3>
           {playingNow.length === 0 ? (
             <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
               Nothing playing — pick a game from your backlog!
@@ -127,7 +138,7 @@ export default function Dashboard() {
 
         {/* Recent activity / achievements */}
         <div className="card">
-          <h3 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: 800 }}>🏆 Recent Achievements</h3>
+          <h3 style={{ marginBottom: '1rem', fontSize: '1rem', fontWeight: 800 }}>Recent Achievements</h3>
           {recentActivity.length === 0 ? (
             <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
               No achievements yet — add a game to start earning XP!
@@ -135,7 +146,6 @@ export default function Dashboard() {
           ) : (
             recentActivity.slice(0, 6).map((a, i) => (
               <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                <span style={{ fontSize: '1.25rem' }}>{a.icon}</span>
                 <div>
                   <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>{a.achievement_title}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -150,6 +160,10 @@ export default function Dashboard() {
 
       {showAddModal && (
         <AddGameModal onClose={() => setShowAddModal(false)} onAdded={() => loadAll()} />
+      )}
+
+      {showPicker && (
+        <GamePicker games={allItems} onClose={() => setShowPicker(false)} />
       )}
     </div>
   );
