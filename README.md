@@ -11,7 +11,7 @@ A gamified video game backlog manager that tracks games from **all platforms** (
 | **Multi-platform** | PS5, Xbox, Switch, PC (Steam/Epic/GOG), mobile, retro — anything goes |
 | **How Long to Beat** | Store Main Story / Main + Extras / Completionist hours per game |
 | **HLTB Search** | Search-as-you-type integration — auto-populates completion times from HowLongToBeat |
-| **Game Cover Art** | Automatic cover images from RAWG.io game database |
+| **Game Cover Art** | Automatic cover images from IGDB (Twitch-backed game database) |
 | **Vibe Profiles** | Game-level tags: intensity (Chill → Brutal), story pace, mood/atmosphere |
 | **Vibe Interview** | When you add a game, a short questionnaire captures *why* you want to play it and auto-generates personal mood tags |
 | **Staleness Checks** | After 3 months of inactivity on a non-completed game, the app asks why you haven't picked it up |
@@ -134,7 +134,8 @@ DATABASE_URL=postgres://postgres:password@localhost:5432/backlog_manager
 PORT=3001
 NODE_ENV=development
 CORS_ORIGIN=http://localhost:5173   # optional, defaults to this value
-RAWG_API_KEY=your_key_here          # free key from https://rawg.io/apidocs
+TWITCH_CLIENT_ID=your_id_here       # register at https://dev.twitch.tv/console/apps
+TWITCH_CLIENT_SECRET=your_secret    # needed for IGDB game covers
 ```
 
 ---
@@ -188,13 +189,13 @@ RAWG_API_KEY=your_key_here          # free key from https://rawg.io/apidocs
 | `GET` | `/api/progress/achievements` | All achievements with earned status |
 | `GET` | `/api/progress/activity` | Last 20 earned achievements |
 
-### Game Search (HLTB + RAWG)
+### Game Search (HLTB + IGDB)
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/search/games?q=...` | Combined search: HLTB times + RAWG covers, merged by title |
+| `GET` | `/api/search/games?q=...` | Combined search: HLTB times + IGDB covers, merged by title |
 | `GET` | `/api/search/hltb?q=...` | HLTB-only search — returns completion times |
-| `GET` | `/api/search/covers?q=...` | RAWG-only search — returns cover images (requires `RAWG_API_KEY`) |
+| `GET` | `/api/search/covers?q=...` | IGDB-only search — returns cover images (requires Twitch credentials) |
 
 Search results include: `title`, `hltb_main_story`, `hltb_main_plus_extras`, `hltb_completionist`, `cover_image_url`, `platforms`, `release_year`, `developer`, `genres`, `source`.
 
@@ -218,7 +219,7 @@ npm test
 
 111 tests across two suites:
 
-- **`services.test.js`** — 78 unit tests covering all 8 vibe mood categories, all 5 session-length variants, interview-answer analysis, tag deduplication, XP/level math, HLTB cache staleness, and game search service (HLTB + RAWG).
+- **`services.test.js`** — 78 unit tests covering all 8 vibe mood categories, all 5 session-length variants, interview-answer analysis, tag deduplication, XP/level math, HLTB cache staleness, and game search service (HLTB + IGDB).
 - **`routes.test.js`** — 33 integration tests using Fastify's `inject()` API with a mocked database, covering validation error paths and success responses for every route including search endpoints.
 
 ---

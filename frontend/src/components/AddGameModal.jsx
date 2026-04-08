@@ -176,7 +176,7 @@ export default function AddGameModal({ onClose, onAdded }) {
         {step === 1 && (
           <>
             <div className="form-group" style={{ position: 'relative' }} ref={dropdownRef}>
-              <label>Game Title * <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>— type to search HLTB & RAWG</span></label>
+              <label>Game Title * <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>— type to search HLTB & IGDB</span></label>
               <div style={{ position: 'relative' }}>
                 <input
                   value={gameData.title}
@@ -225,7 +225,7 @@ export default function AddGameModal({ onClose, onAdded }) {
                           {r.release_year && <span>📅 {r.release_year}</span>}
                           {r.platforms?.length > 0 && <span>🎮 {r.platforms.slice(0, 3).join(', ')}</span>}
                           {r.hltb_main_story && <span>⏱️ {r.hltb_main_story}h</span>}
-                          {r.source === 'rawg' && <span style={{ color: 'var(--accent)' }}>RAWG</span>}
+                          {r.source === 'igdb' && <span style={{ color: 'var(--accent)' }}>IGDB</span>}
                           {r.source === 'hltb' && <span style={{ color: 'var(--accent)' }}>HLTB</span>}
                         </div>
                       </div>

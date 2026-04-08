@@ -501,12 +501,15 @@ describe('gameSearchService', () => {
       expect(await searchCovers('')).toEqual([]);
     });
 
-    test('returns empty array without RAWG_API_KEY', async () => {
-      const origKey = process.env.RAWG_API_KEY;
-      delete process.env.RAWG_API_KEY;
+    test('returns empty array without IGDB credentials', async () => {
+      const origId = process.env.TWITCH_CLIENT_ID;
+      const origSecret = process.env.TWITCH_CLIENT_SECRET;
+      delete process.env.TWITCH_CLIENT_ID;
+      delete process.env.TWITCH_CLIENT_SECRET;
       const results = await searchCovers('Mario');
       expect(results).toEqual([]);
-      if (origKey) process.env.RAWG_API_KEY = origKey;
+      if (origId) process.env.TWITCH_CLIENT_ID = origId;
+      if (origSecret) process.env.TWITCH_CLIENT_SECRET = origSecret;
     });
   });
 
@@ -524,7 +527,7 @@ describe('gameSearchService', () => {
       expect(Array.isArray(results)).toBe(true);
       if (results.length > 0) {
         for (const r of results) {
-          expect(['hltb', 'rawg']).toContain(r.source);
+          expect(['hltb', 'igdb']).toContain(r.source);
           expect(typeof r.title).toBe('string');
         }
       }

@@ -1,16 +1,64 @@
 /**
- * Game search service — searches HLTB for completion times and RAWG for cover images.
+ * Game search service — searches HLTB for completion times and IGDB for cover images.
  *
  * Uses native fetch (Node 18+) to avoid third-party HTTP library vulnerabilities.
+ * IGDB requires Twitch OAuth (client credentials flow) — set TWITCH_CLIENT_ID
+ * and TWITCH_CLIENT_SECRET in your environment.
  */
 
 const HLTB_BASE = 'https://howlongtobeat.com';
 const HLTB_SEARCH_URL = `${HLTB_BASE}/api/search`;
 const HLTB_IMAGE_BASE = `${HLTB_BASE}/games/`;
 
-const RAWG_BASE = 'https://api.rawg.io/api';
+const IGDB_BASE = 'https://api.igdb.com/v4';
+const TWITCH_TOKEN_URL = 'https://id.twitch.tv/oauth2/token';
+const IGDB_IMAGE_BASE = 'https://images.igdb.com/igdb/image/upload';
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+
+// ── Twitch OAuth Token Management ──────────────────────────────
+
+let cachedToken = null;
+let tokenExpiresAt = 0;
+
+/**
+ * Get a valid Twitch app access token (client credentials flow).
+ * Tokens are cached in memory and refreshed 60s before expiry.
+ */
+export async function getTwitchToken() {
+  if (cachedToken && Date.now() < tokenExpiresAt - 60_000) {
+    return cachedToken;
+  }
+
+  const clientId = process.env.TWITCH_CLIENT_ID;
+  const clientSecret = process.env.TWITCH_CLIENT_SECRET;
+  if (!clientId || !clientSecret) return null;
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    grant_type: 'client_credentials',
+  });
+
+  const res = await fetch(TWITCH_TOKEN_URL, {
+    method: 'POST',
+    body: params,
+    signal: AbortSignal.timeout(10_000),
+  });
+
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  cachedToken = data.access_token;
+  tokenExpiresAt = Date.now() + data.expires_in * 1000;
+  return cachedToken;
+}
+
+// Exposed for testing
+export function _resetTokenCache() {
+  cachedToken = null;
+  tokenExpiresAt = 0;
+}
 
 // ── HLTB Search ────────────────────────────────────────────────
 
@@ -82,47 +130,62 @@ export async function searchHltb(query) {
   }
 }
 
-// ── RAWG Cover Search ──────────────────────────────────────────
+// ── IGDB Cover Search ──────────────────────────────────────────
 
-function normalizeRawgEntry(entry) {
+function buildIgdbCoverUrl(imageId, size = 't_cover_big') {
+  return `${IGDB_IMAGE_BASE}/${size}/${imageId}.jpg`;
+}
+
+function normalizeIgdbEntry(entry) {
   return {
-    rawg_id: entry.id,
+    igdb_id: entry.id,
     title: entry.name,
-    cover_image_url: entry.background_image ?? null,
-    released: entry.released ?? null,
-    release_year: entry.released ? parseInt(entry.released.substring(0, 4), 10) : null,
-    platforms: (entry.platforms ?? []).map((p) => p.platform?.name).filter(Boolean),
+    cover_image_url: entry.cover?.image_id
+      ? buildIgdbCoverUrl(entry.cover.image_id)
+      : null,
+    released: entry.first_release_date
+      ? new Date(entry.first_release_date * 1000).toISOString().substring(0, 10)
+      : null,
+    release_year: entry.first_release_date
+      ? new Date(entry.first_release_date * 1000).getFullYear()
+      : null,
+    platforms: (entry.platforms ?? []).map((p) => p.name).filter(Boolean),
     genres: (entry.genres ?? []).map((g) => g.name),
-    rating: entry.rating ?? null,
-    metacritic: entry.metacritic ?? null,
+    rating: entry.total_rating ? Math.round(entry.total_rating) : null,
+    summary: entry.summary ?? null,
   };
 }
 
 /**
- * Search RAWG for game cover images and metadata.
- * Requires RAWG_API_KEY environment variable. Returns empty array if missing.
+ * Search IGDB for game cover images and metadata.
+ * Requires TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET environment variables.
+ * Returns empty array if credentials are missing or on error.
  */
 export async function searchCovers(query) {
-  const apiKey = process.env.RAWG_API_KEY;
-  if (!apiKey || !query || query.trim().length < 2) return [];
+  if (!query || query.trim().length < 2) return [];
 
   try {
-    const params = new URLSearchParams({
-      key: apiKey,
-      search: query.trim(),
-      page_size: '10',
-      search_precise: 'true',
-    });
+    const token = await getTwitchToken();
+    if (!token) return [];
 
-    const res = await fetch(`${RAWG_BASE}/games?${params}`, {
-      headers: { 'User-Agent': UA },
+    const clientId = process.env.TWITCH_CLIENT_ID;
+    const body = `search "${query.trim().replace(/"/g, '\\"')}"; fields name, cover.image_id, first_release_date, genres.name, platforms.name, total_rating, summary; limit 10;`;
+
+    const res = await fetch(`${IGDB_BASE}/games`, {
+      method: 'POST',
+      headers: {
+        'Client-ID': clientId,
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/json',
+      },
+      body,
       signal: AbortSignal.timeout(10_000),
     });
 
     if (!res.ok) return [];
 
     const json = await res.json();
-    return (json.results ?? []).map(normalizeRawgEntry);
+    return (Array.isArray(json) ? json : []).map(normalizeIgdbEntry);
   } catch {
     return [];
   }
@@ -131,57 +194,57 @@ export async function searchCovers(query) {
 // ── Combined Search ────────────────────────────────────────────
 
 /**
- * Search both HLTB and RAWG in parallel and merge results by best title match.
- * Returns unified entries with HLTB times + RAWG cover images.
+ * Search both HLTB and IGDB in parallel and merge results by best title match.
+ * Returns unified entries with HLTB times + IGDB cover images.
  */
 export async function searchGames(query) {
   if (!query || query.trim().length < 2) return [];
 
-  const [hltbResults, rawgResults] = await Promise.all([
+  const [hltbResults, igdbResults] = await Promise.all([
     searchHltb(query),
     searchCovers(query),
   ]);
 
-  // Merge: start with HLTB results and try to attach RAWG cover image
+  // Merge: start with HLTB results and try to attach IGDB cover image
   const merged = hltbResults.map((hltb) => {
     const titleLower = hltb.title.toLowerCase();
-    const rawgMatch = rawgResults.find(
+    const igdbMatch = igdbResults.find(
       (r) => r.title.toLowerCase() === titleLower,
-    ) ?? rawgResults.find(
+    ) ?? igdbResults.find(
       (r) => r.title.toLowerCase().includes(titleLower) || titleLower.includes(r.title.toLowerCase()),
     );
 
     return {
       ...hltb,
-      cover_image_url: rawgMatch?.cover_image_url ?? hltb.image_url,
-      genres: rawgMatch?.genres ?? (hltb.genre ? [hltb.genre] : []),
-      metacritic: rawgMatch?.metacritic ?? null,
+      cover_image_url: igdbMatch?.cover_image_url ?? hltb.image_url,
+      genres: igdbMatch?.genres ?? (hltb.genre ? [hltb.genre] : []),
+      metacritic: null,
       source: 'hltb',
     };
   });
 
-  // Add RAWG-only results not already in HLTB results
-  for (const rawg of rawgResults) {
-    const rawgLower = rawg.title.toLowerCase();
+  // Add IGDB-only results not already in HLTB results
+  for (const igdb of igdbResults) {
+    const igdbLower = igdb.title.toLowerCase();
     const alreadyMerged = merged.some(
-      (m) => m.title.toLowerCase() === rawgLower,
+      (m) => m.title.toLowerCase() === igdbLower,
     );
     if (!alreadyMerged) {
       merged.push({
         hltb_id: null,
-        title: rawg.title,
-        image_url: rawg.cover_image_url,
-        cover_image_url: rawg.cover_image_url,
-        platforms: rawg.platforms,
-        release_year: rawg.release_year,
+        title: igdb.title,
+        image_url: igdb.cover_image_url,
+        cover_image_url: igdb.cover_image_url,
+        platforms: igdb.platforms,
+        release_year: igdb.release_year,
         hltb_main_story: null,
         hltb_main_plus_extras: null,
         hltb_completionist: null,
         developer: null,
-        genre: rawg.genres[0] ?? null,
-        genres: rawg.genres,
-        metacritic: rawg.metacritic,
-        source: 'rawg',
+        genre: igdb.genres[0] ?? null,
+        genres: igdb.genres,
+        metacritic: null,
+        source: 'igdb',
       });
     }
   }

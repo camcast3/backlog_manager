@@ -426,7 +426,7 @@ describe('GET /api/search/covers', () => {
     expect(res.statusCode).toBe(400);
   });
 
-  test('returns 200 with results (empty without RAWG_API_KEY)', async () => {
+  test('returns 200 with results (empty without IGDB credentials)', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/search/covers?q=mario' });
     expect(res.statusCode).toBe(200);
     const body = res.json();
