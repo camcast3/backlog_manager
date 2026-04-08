@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { gamesApi, backlogApi } from '../services/api';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { gamesApi, backlogApi, searchApi } from '../services/api';
 import { useToast } from '../context/ToastContext';
 
 const PLATFORMS = [
@@ -19,6 +19,13 @@ export default function AddGameModal({ onClose, onAdded }) {
   const toast = useToast();
   const [step, setStep] = useState(1); // 1 = game info, 2 = vibe interview
   const [loading, setLoading] = useState(false);
+
+  // Search state
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchTimer = useRef(null);
+  const dropdownRef = useRef(null);
 
   // Step 1: game data
   const [gameData, setGameData] = useState({
@@ -49,6 +56,58 @@ export default function AddGameModal({ onClose, onAdded }) {
       interview_answers: { ...d.interview_answers, [key]: value },
     }));
   }
+
+  // Debounced game search as user types
+  const handleTitleChange = useCallback((value) => {
+    gSet('title', value);
+    clearTimeout(searchTimer.current);
+    if (value.trim().length < 2) {
+      setSearchResults([]);
+      setShowDropdown(false);
+      return;
+    }
+    setSearching(true);
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const data = await searchApi.games(value.trim());
+        setSearchResults(data.results ?? []);
+        setShowDropdown(true);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 350);
+  }, []);
+
+  // Auto-populate fields when user selects a search result
+  function selectSearchResult(result) {
+    setGameData((d) => ({
+      ...d,
+      title: result.title,
+      cover_image_url: result.cover_image_url || result.image_url || d.cover_image_url,
+      hltb_main_story: result.hltb_main_story ?? d.hltb_main_story,
+      hltb_main_plus_extras: result.hltb_main_plus_extras ?? d.hltb_main_plus_extras,
+      hltb_completionist: result.hltb_completionist ?? d.hltb_completionist,
+      developer: result.developer || d.developer,
+      release_year: result.release_year || d.release_year,
+      genre: result.genres?.[0] || result.genre || d.genre,
+    }));
+    setShowDropdown(false);
+    setSearchResults([]);
+    toast(`✅ Auto-filled data for "${result.title}"`, 'success');
+  }
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setShowDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   async function handleSubmit() {
     if (!gameData.title.trim()) {
@@ -116,10 +175,100 @@ export default function AddGameModal({ onClose, onAdded }) {
 
         {step === 1 && (
           <>
-            <div className="form-group">
-              <label>Game Title *</label>
-              <input value={gameData.title} onChange={(e) => gSet('title', e.target.value)} placeholder="e.g. Elden Ring" autoFocus />
+            <div className="form-group" style={{ position: 'relative' }} ref={dropdownRef}>
+              <label>Game Title * <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 400 }}>— type to search HLTB & RAWG</span></label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  value={gameData.title}
+                  onChange={(e) => handleTitleChange(e.target.value)}
+                  placeholder="e.g. Elden Ring"
+                  autoFocus
+                  autoComplete="off"
+                />
+                {searching && (
+                  <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', fontSize: '0.85rem', color: 'var(--text-muted)' }}>🔍</span>
+                )}
+              </div>
+
+              {showDropdown && searchResults.length > 0 && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+                  background: 'var(--card-bg)', border: '1px solid var(--border)',
+                  borderRadius: 8, maxHeight: 320, overflowY: 'auto', marginTop: 4,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                }}>
+                  {searchResults.map((r, i) => (
+                    <button
+                      key={r.hltb_id || r.rawg_id || i}
+                      onClick={() => selectSearchResult(r)}
+                      style={{
+                        display: 'flex', gap: '0.75rem', alignItems: 'center',
+                        width: '100%', padding: '0.6rem 0.75rem', border: 'none',
+                        background: 'transparent', cursor: 'pointer', textAlign: 'left',
+                        borderBottom: i < searchResults.length - 1 ? '1px solid var(--border)' : 'none',
+                        color: 'var(--text)', fontSize: '0.9rem',
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--hover-bg)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      {(r.cover_image_url || r.image_url) && (
+                        <img
+                          src={r.cover_image_url || r.image_url}
+                          alt=""
+                          style={{ width: 40, height: 54, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }}
+                          onError={(e) => e.target.style.display = 'none'}
+                        />
+                      )}
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.title}</div>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          {r.release_year && <span>📅 {r.release_year}</span>}
+                          {r.platforms?.length > 0 && <span>🎮 {r.platforms.slice(0, 3).join(', ')}</span>}
+                          {r.hltb_main_story && <span>⏱️ {r.hltb_main_story}h</span>}
+                          {r.source === 'rawg' && <span style={{ color: 'var(--accent)' }}>RAWG</span>}
+                          {r.source === 'hltb' && <span style={{ color: 'var(--accent)' }}>HLTB</span>}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {showDropdown && searchResults.length === 0 && !searching && gameData.title.trim().length >= 2 && (
+                <div style={{
+                  position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
+                  background: 'var(--card-bg)', border: '1px solid var(--border)',
+                  borderRadius: 8, padding: '0.75rem', marginTop: 4, textAlign: 'center',
+                  color: 'var(--text-muted)', fontSize: '0.85rem',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                }}>
+                  No results found — you can still enter details manually
+                </div>
+              )}
             </div>
+
+            {/* Cover image preview */}
+            {gameData.cover_image_url && (
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                <img
+                  src={gameData.cover_image_url}
+                  alt="Cover"
+                  style={{ width: 80, height: 107, objectFit: 'cover', borderRadius: 6, border: '1px solid var(--border)' }}
+                  onError={(e) => e.target.style.display = 'none'}
+                />
+                <div style={{ flex: 1 }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label>Cover Image URL</label>
+                    <input value={gameData.cover_image_url} onChange={(e) => gSet('cover_image_url', e.target.value)} placeholder="https://..." />
+                  </div>
+                </div>
+              </div>
+            )}
+            {!gameData.cover_image_url && (
+              <div className="form-group">
+                <label>Cover Image URL (optional)</label>
+                <input value={gameData.cover_image_url} onChange={(e) => gSet('cover_image_url', e.target.value)} placeholder="Auto-filled from search, or paste URL" />
+              </div>
+            )}
 
             <div className="grid-2">
               <div className="form-group">
@@ -143,11 +292,6 @@ export default function AddGameModal({ onClose, onAdded }) {
                 <label>Release Year</label>
                 <input type="number" value={gameData.release_year} onChange={(e) => gSet('release_year', e.target.value)} placeholder="e.g. 2022" min="1970" max="2030" />
               </div>
-            </div>
-
-            <div className="form-group">
-              <label>Cover Image URL (optional)</label>
-              <input value={gameData.cover_image_url} onChange={(e) => gSet('cover_image_url', e.target.value)} placeholder="https://..." />
             </div>
 
             <fieldset style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '1rem', marginBottom: '1rem' }}>

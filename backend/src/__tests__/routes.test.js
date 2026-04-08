@@ -381,3 +381,55 @@ describe('GET /api/vibe-questions', () => {
     }
   });
 });
+
+// ── Search routes ─────────────────────────────────────────────────────────────
+describe('GET /api/search/games', () => {
+  test('returns 400 when q is missing', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/search/games' });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toMatch(/at least 2 characters/);
+  });
+
+  test('returns 400 when q is too short', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/search/games?q=a' });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('returns 200 with results array for valid query', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/search/games?q=elden+ring' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.query).toBe('elden ring');
+    expect(Array.isArray(body.results)).toBe(true);
+    expect(typeof body.count).toBe('number');
+  });
+});
+
+describe('GET /api/search/hltb', () => {
+  test('returns 400 when q is missing', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/search/hltb' });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('returns 200 with results for valid query', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/search/hltb?q=zelda' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.query).toBe('zelda');
+    expect(Array.isArray(body.results)).toBe(true);
+  });
+});
+
+describe('GET /api/search/covers', () => {
+  test('returns 400 when q is missing', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/search/covers' });
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('returns 200 with results (empty without RAWG_API_KEY)', async () => {
+    const res = await app.inject({ method: 'GET', url: '/api/search/covers?q=mario' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body.results)).toBe(true);
+  });
+});

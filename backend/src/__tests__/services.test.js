@@ -2,6 +2,7 @@ import { analyzeVibeInterview } from '../services/vibeService.js';
 import { xpForLevel, levelFromXp } from '../services/gamificationService.js';
 import { getHltbTtlDays, isHltbStale } from '../services/hltbService.js';
 import { analyzeVibeAnswers, VIBE_QUESTIONS, PRIMARY_MOOD_WEIGHT } from '../services/vibeQuestionService.js';
+import { searchHltb, searchCovers, searchGames } from '../services/gameSearchService.js';
 
 describe('vibeService.analyzeVibeInterview', () => {
   // ── Mood tag detection ──────────────────────────────────────────────────────
@@ -453,5 +454,98 @@ describe('vibeQuestionService.analyzeVibeAnswers', () => {
     expect(result.tags).toContain('story');
     // story appears in mood, headspace, completion_goal, why_now answers → deduped to 1
     expect(result.tags.filter((t) => t === 'story').length).toBe(1);
+  });
+});
+
+// ── gameSearchService ─────────────────────────────────────────────────────────
+
+describe('gameSearchService', () => {
+  describe('searchHltb', () => {
+    test('returns empty array for empty query', async () => {
+      expect(await searchHltb('')).toEqual([]);
+    });
+
+    test('returns empty array for single character query', async () => {
+      expect(await searchHltb('a')).toEqual([]);
+    });
+
+    test('returns array of results for valid query', async () => {
+      const results = await searchHltb('Elden Ring');
+      expect(Array.isArray(results)).toBe(true);
+      // May return results from HLTB or empty if API is unreachable
+      if (results.length > 0) {
+        const first = results[0];
+        expect(typeof first.title).toBe('string');
+        expect(first.title.length).toBeGreaterThan(0);
+        expect(typeof first.hltb_id).toBe('string');
+        // HLTB fields should be numbers or null
+        for (const field of ['hltb_main_story', 'hltb_main_plus_extras', 'hltb_completionist']) {
+          expect(first[field] === null || typeof first[field] === 'number').toBe(true);
+        }
+      }
+    });
+
+    test('returns results with image_url for known games', async () => {
+      const results = await searchHltb('The Witcher 3');
+      if (results.length > 0) {
+        const first = results[0];
+        if (first.image_url) {
+          expect(first.image_url).toMatch(/^https:\/\//);
+        }
+      }
+    });
+  });
+
+  describe('searchCovers', () => {
+    test('returns empty array for empty query', async () => {
+      expect(await searchCovers('')).toEqual([]);
+    });
+
+    test('returns empty array without RAWG_API_KEY', async () => {
+      const origKey = process.env.RAWG_API_KEY;
+      delete process.env.RAWG_API_KEY;
+      const results = await searchCovers('Mario');
+      expect(results).toEqual([]);
+      if (origKey) process.env.RAWG_API_KEY = origKey;
+    });
+  });
+
+  describe('searchGames (combined)', () => {
+    test('returns empty array for empty query', async () => {
+      expect(await searchGames('')).toEqual([]);
+    });
+
+    test('returns empty array for single char query', async () => {
+      expect(await searchGames('x')).toEqual([]);
+    });
+
+    test('returns array with source field for valid query', async () => {
+      const results = await searchGames('Hollow Knight');
+      expect(Array.isArray(results)).toBe(true);
+      if (results.length > 0) {
+        for (const r of results) {
+          expect(['hltb', 'rawg']).toContain(r.source);
+          expect(typeof r.title).toBe('string');
+        }
+      }
+    });
+
+    test('results have expected shape fields', async () => {
+      const results = await searchGames('Dark Souls');
+      if (results.length > 0) {
+        const r = results[0];
+        expect(r).toHaveProperty('title');
+        expect(r).toHaveProperty('cover_image_url');
+        expect(r).toHaveProperty('hltb_main_story');
+        expect(r).toHaveProperty('hltb_main_plus_extras');
+        expect(r).toHaveProperty('hltb_completionist');
+        expect(r).toHaveProperty('source');
+      }
+    });
+
+    test('limits results to 15 max', async () => {
+      const results = await searchGames('Mario');
+      expect(results.length).toBeLessThanOrEqual(15);
+    });
   });
 });
