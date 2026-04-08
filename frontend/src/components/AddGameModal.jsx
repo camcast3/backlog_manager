@@ -12,10 +12,10 @@ const PLATFORMS = [
   'GameCube', 'Nintendo 64', 'SNES', 'NES',
   // PC
   'PC (Steam)', 'PC (Epic)', 'PC (GOG)', 'PC (Other)',
-  // Mobile
-  'iOS', 'Android',
+  // Sega
+  'Sega Dreamcast', 'Sega Genesis',
   // Other
-  'Sega Dreamcast', 'Sega Genesis', 'Atari', 'Neo Geo', 'Other',
+  'Atari', 'Neo Geo', 'Other',
 ];
 
 const VIBE_QUESTIONS = [
