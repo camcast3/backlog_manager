@@ -215,7 +215,7 @@ export default function AddGameModal({ onClose, onAdded }) {
                 }}>
                   {searchResults.map((r, i) => (
                     <button
-                      key={r.hltb_id || r.igdb_id || i}
+                      key={r.igdb_id || r.hltb_id || i}
                       onClick={() => selectSearchResult(r)}
                       style={{
                         display: 'flex', gap: '0.75rem', alignItems: 'center',
@@ -241,8 +241,8 @@ export default function AddGameModal({ onClose, onAdded }) {
                           {r.release_year && <span>📅 {r.release_year}</span>}
                           {r.platforms?.length > 0 && <span>🎮 {r.platforms.slice(0, 3).join(', ')}</span>}
                           {r.hltb_main_story && <span>⏱️ {r.hltb_main_story}h</span>}
-                          {r.source === 'igdb' && <span style={{ color: 'var(--accent)' }}>IGDB</span>}
-                          {r.source === 'hltb' && <span style={{ color: 'var(--accent)' }}>HLTB</span>}
+                          {r.developer && <span>🏢 {r.developer}</span>}
+                          {r.source === 'hltb' && <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>HLTB only</span>}
                         </div>
                       </div>
                     </button>

@@ -197,6 +197,7 @@ function buildIgdbCoverUrl(imageId, size = 't_cover_big') {
 }
 
 function normalizeIgdbEntry(entry) {
+  const devCompany = (entry.involved_companies ?? []).find((ic) => ic.developer);
   return {
     igdb_id: entry.id,
     title: entry.name,
@@ -211,6 +212,7 @@ function normalizeIgdbEntry(entry) {
       : null,
     platforms: (entry.platforms ?? []).map((p) => p.name).filter(Boolean),
     genres: (entry.genres ?? []).map((g) => g.name),
+    developer: devCompany?.company?.name ?? null,
     rating: entry.total_rating ? Math.round(entry.total_rating) : null,
     summary: entry.summary ?? null,
   };
@@ -229,7 +231,7 @@ export async function searchCovers(query) {
     if (!token) return [];
 
     const clientId = process.env.TWITCH_CLIENT_ID;
-    const body = `search "${query.trim().replace(/"/g, '\\"')}"; fields name, cover.image_id, first_release_date, genres.name, platforms.name, total_rating, summary; limit 10;`;
+    const body = `search "${query.trim().replace(/"/g, '\\"')}"; fields name, cover.image_id, first_release_date, genres.name, platforms.name, involved_companies.company.name, involved_companies.developer, total_rating, summary; limit 10;`;
 
     const res = await fetch(`${IGDB_BASE}/games`, {
       method: 'POST',
@@ -254,8 +256,9 @@ export async function searchCovers(query) {
 // ── Combined Search ────────────────────────────────────────────
 
 /**
- * Search both HLTB and IGDB in parallel and merge results by best title match.
- * Returns unified entries with HLTB times + IGDB cover images.
+ * Search IGDB (primary) and HLTB (time-to-beat only) in parallel,
+ * then merge. IGDB provides title, cover, platforms, genres, developer,
+ * release year, summary. HLTB only enriches with completion times.
  */
 export async function searchGames(query) {
   if (!query || query.trim().length < 2) return [];
@@ -265,46 +268,59 @@ export async function searchGames(query) {
     searchCovers(query),
   ]);
 
-  // Merge: start with HLTB results and try to attach IGDB cover image
-  const merged = hltbResults.map((hltb) => {
-    const titleLower = hltb.title.toLowerCase();
-    const igdbMatch = igdbResults.find(
+  // Start with IGDB results (primary) and attach HLTB times
+  const merged = igdbResults.map((igdb) => {
+    const titleLower = igdb.title.toLowerCase();
+    const hltbMatch = hltbResults.find(
       (r) => r.title.toLowerCase() === titleLower,
-    ) ?? igdbResults.find(
+    ) ?? hltbResults.find(
       (r) => r.title.toLowerCase().includes(titleLower) || titleLower.includes(r.title.toLowerCase()),
     );
 
     return {
-      ...hltb,
-      cover_image_url: igdbMatch?.cover_image_url ?? hltb.image_url,
-      genres: igdbMatch?.genres ?? (hltb.genre ? [hltb.genre] : []),
-      metacritic: null,
-      source: 'hltb',
+      igdb_id: igdb.igdb_id,
+      hltb_id: hltbMatch?.hltb_id ?? null,
+      title: igdb.title,
+      cover_image_url: igdb.cover_image_url,
+      image_url: igdb.cover_image_url,
+      platforms: igdb.platforms,
+      release_year: igdb.release_year,
+      developer: igdb.developer,
+      genre: igdb.genres[0] ?? null,
+      genres: igdb.genres,
+      rating: igdb.rating,
+      summary: igdb.summary,
+      hltb_main_story: hltbMatch?.hltb_main_story ?? null,
+      hltb_main_plus_extras: hltbMatch?.hltb_main_plus_extras ?? null,
+      hltb_completionist: hltbMatch?.hltb_completionist ?? null,
+      source: 'igdb',
     };
   });
 
-  // Add IGDB-only results not already in HLTB results
-  for (const igdb of igdbResults) {
-    const igdbLower = igdb.title.toLowerCase();
+  // Add HLTB-only results (games not found in IGDB) as fallback
+  for (const hltb of hltbResults) {
+    const hltbLower = hltb.title.toLowerCase();
     const alreadyMerged = merged.some(
-      (m) => m.title.toLowerCase() === igdbLower,
+      (m) => m.title.toLowerCase() === hltbLower,
     );
     if (!alreadyMerged) {
       merged.push({
-        hltb_id: null,
-        title: igdb.title,
-        image_url: igdb.cover_image_url,
-        cover_image_url: igdb.cover_image_url,
-        platforms: igdb.platforms,
-        release_year: igdb.release_year,
-        hltb_main_story: null,
-        hltb_main_plus_extras: null,
-        hltb_completionist: null,
-        developer: null,
-        genre: igdb.genres[0] ?? null,
-        genres: igdb.genres,
-        metacritic: null,
-        source: 'igdb',
+        igdb_id: null,
+        hltb_id: hltb.hltb_id,
+        title: hltb.title,
+        cover_image_url: hltb.image_url,
+        image_url: hltb.image_url,
+        platforms: hltb.platforms,
+        release_year: hltb.release_year,
+        developer: hltb.developer,
+        genre: hltb.genre,
+        genres: hltb.genre ? [hltb.genre] : [],
+        rating: null,
+        summary: null,
+        hltb_main_story: hltb.hltb_main_story,
+        hltb_main_plus_extras: hltb.hltb_main_plus_extras,
+        hltb_completionist: hltb.hltb_completionist,
+        source: 'hltb',
       });
     }
   }

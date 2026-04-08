@@ -574,7 +574,22 @@ describe('gameSearchService', () => {
         expect(r).toHaveProperty('hltb_main_story');
         expect(r).toHaveProperty('hltb_main_plus_extras');
         expect(r).toHaveProperty('hltb_completionist');
+        expect(r).toHaveProperty('developer');
         expect(r).toHaveProperty('source');
+      }
+    });
+
+    test('IGDB results are primary when available', async () => {
+      const results = await searchGames('Elden Ring');
+      if (results.length > 0) {
+        const igdbResult = results.find((r) => r.source === 'igdb');
+        if (igdbResult) {
+          expect(igdbResult.igdb_id).toBeTruthy();
+          // HLTB times attached to IGDB primary result
+          if (igdbResult.hltb_id) {
+            expect(typeof igdbResult.hltb_main_story === 'number' || igdbResult.hltb_main_story === null).toBe(true);
+          }
+        }
       }
     });
 
