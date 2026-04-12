@@ -58,7 +58,7 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: cd frontend && npm ci
+        run: cd frontend && npm install
 
       - name: Run tests
         run: cd frontend && npx vitest run
@@ -99,7 +99,7 @@ jobs:
         run: cd backend && npm ci
 
       - name: Install frontend dependencies
-        run: cd frontend && npm ci
+        run: cd frontend && npm install
 
       - name: Run migrations
         run: cd backend && node src/db/migrate.js
