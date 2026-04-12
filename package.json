@@ -1,0 +1,26 @@
+{
+  "name": "backlog_manager",
+  "version": "1.0.0",
+  "description": "A gamified video game backlog manager that tracks games from **all platforms** (new releases and retro classics alike). It captures *How Long to Beat* data, builds a **vibe profile** for every game you add, and makes managing your backlog feel like a game itself.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:e2e": "npx playwright test",
+    "test:e2e:headed": "npx playwright test --headed"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/camcast3/backlog_manager.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/camcast3/backlog_manager/issues"
+  },
+  "homepage": "https://github.com/camcast3/backlog_manager#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1"
+  }
+}

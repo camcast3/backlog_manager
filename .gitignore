@@ -19,6 +19,10 @@ npm-debug.log*
 Thumbs.db
 *.png
 
+# Playwright
+test-results/
+playwright-report/
+
 # Editor
 .vscode/
 .idea/
