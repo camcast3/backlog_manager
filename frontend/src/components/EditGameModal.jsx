@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { gamesApi, backlogApi } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { PLATFORMS, VIBE_INTENSITIES, STORY_PACES } from '../constants';
+import { FaTimes } from 'react-icons/fa';
 
 export default function EditGameModal({ item, onClose, onUpdated }) {
   const toast = useToast();
@@ -73,7 +74,7 @@ export default function EditGameModal({ item, onClose, onUpdated }) {
       <div className="modal" style={{ maxWidth: 620 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <h2 className="modal-title" style={{ margin: 0 }}>Edit Game</h2>
-          <button onClick={onClose} style={{ background: 'none', color: 'var(--text-muted)', fontSize: '1.25rem' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', color: 'var(--text-muted)', fontSize: '1.25rem' }}><FaTimes /></button>
         </div>
 
         {/* Cover image preview */}

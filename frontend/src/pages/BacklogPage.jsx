@@ -7,6 +7,7 @@ import AddGameModal from '../components/AddGameModal';
 import EditGameModal from '../components/EditGameModal';
 import GamePicker from '../components/GamePicker';
 import { useToast } from '../context/ToastContext';
+import { FaPen, FaTimes } from 'react-icons/fa';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All' },
@@ -199,14 +200,14 @@ export default function BacklogPage() {
                 style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
                 onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
               >
-                ✏️
+                <FaPen />
               </button>
               <button
                 className="btn-danger"
                 style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
                 onClick={(e) => { e.stopPropagation(); deleteItem(item); }}
               >
-                ✕
+                <FaTimes />
               </button>
             </div>
           </div>

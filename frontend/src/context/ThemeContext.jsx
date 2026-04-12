@@ -1,10 +1,12 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { FaMoon, FaSun, FaStar, FaTree, FaCloudSun } from 'react-icons/fa';
 
 const ThemeContext = createContext(null);
 
 export const THEMES = {
   dark: {
-    label: '🌙 Dark',
+    label: 'Dark',
+    Icon: FaMoon,
     vars: {
       '--bg': '#0f0f1a',
       '--surface': '#1a1a2e',
@@ -19,7 +21,8 @@ export const THEMES = {
     },
   },
   light: {
-    label: '☀️ Light',
+    label: 'Light',
+    Icon: FaSun,
     vars: {
       '--bg': '#f5f5f5',
       '--surface': '#ffffff',
@@ -34,7 +37,8 @@ export const THEMES = {
     },
   },
   midnight: {
-    label: '🌌 Midnight',
+    label: 'Midnight',
+    Icon: FaStar,
     vars: {
       '--bg': '#020617',
       '--surface': '#0f172a',
@@ -49,7 +53,8 @@ export const THEMES = {
     },
   },
   forest: {
-    label: '🌲 Forest',
+    label: 'Forest',
+    Icon: FaTree,
     vars: {
       '--bg': '#0a1a0f',
       '--surface': '#142118',
@@ -64,7 +69,8 @@ export const THEMES = {
     },
   },
   sunset: {
-    label: '🌅 Sunset',
+    label: 'Sunset',
+    Icon: FaCloudSun,
     vars: {
       '--bg': '#1a0a0f',
       '--surface': '#2a1520',

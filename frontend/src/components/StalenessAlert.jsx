@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { backlogApi } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import StatusBadge from './StatusBadge';
+import { FaTrophy } from 'react-icons/fa';
 
 const STATUS_OPTIONS = [
   { value: 'want_to_play', label: 'Want to Play' },
@@ -27,7 +28,7 @@ export default function StalenessAlert({ staleItems, onDismiss }) {
     setSubmitting((s) => ({ ...s, [item.id]: true }));
     try {
       const result = await backlogApi.stalenessResponse(item.id, response);
-      toast(`Thanks for the update! ${result.gamification?.newAchievements?.length ? '🏆 Achievement unlocked!' : '+15 XP'}`, 'success');
+      toast(<>Thanks for the update! {result.gamification?.newAchievements?.length ? <><FaTrophy style={{ verticalAlign: 'middle' }} /> Achievement unlocked!</> : '+15 XP'}</>, 'success');
       onDismiss(item.id);
     } catch (err) {
       toast(err.message, 'warning');

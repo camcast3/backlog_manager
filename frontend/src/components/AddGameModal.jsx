@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { gamesApi, backlogApi, searchApi } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { PLATFORMS, VIBE_INTENSITIES, STORY_PACES } from '../constants';
+import { FaTimes, FaCheck } from 'react-icons/fa';
 
 const VIBE_QUESTIONS = [
   { key: 'mood', label: 'What mood are you in when you imagine playing this?', placeholder: 'e.g. I want to relax, I\'m craving a challenge, I want a good story...' },
@@ -90,7 +91,7 @@ export default function AddGameModal({ onClose, onAdded }) {
     }));
     setShowDropdown(false);
     setSearchResults([]);
-    toast(`✅ Auto-filled data for "${result.title}"`, 'success');
+    toast(<><FaCheck style={{ verticalAlign: 'middle' }} /> Auto-filled data for "{result.title}"</>, 'success');
   }
 
   // Close dropdown on outside click
@@ -161,7 +162,7 @@ export default function AddGameModal({ onClose, onAdded }) {
           <h2 className="modal-title" style={{ margin: 0 }}>
             {step === 1 ? 'Add Game' : 'Vibe Interview'}
           </h2>
-          <button onClick={onClose} style={{ background: 'none', color: 'var(--text-muted)', fontSize: '1.25rem' }}>✕</button>
+          <button onClick={onClose} style={{ background: 'none', color: 'var(--text-muted)', fontSize: '1.25rem' }}><FaTimes /></button>
         </div>
 
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>

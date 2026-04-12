@@ -31,7 +31,9 @@ export default function SettingsPage() {
                   <div key={i} style={{ width: 20, height: 20, borderRadius: 4, background: c, border: '1px solid rgba(255,255,255,0.1)' }} />
                 ))}
               </div>
-              <span style={{ fontWeight: 700, fontSize: '0.85rem' }}>{t.label}</span>
+              <span style={{ fontWeight: 700, fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                {t.Icon && <t.Icon />} {t.label}
+              </span>
               {theme === key && <span style={{ fontSize: '0.7rem', color: t.vars['--accent'] }}>Active</span>}
             </button>
           ))}
