@@ -20,6 +20,6 @@ test.describe('Backlog Management', () => {
     await page.goto('/backlog');
     await expect(page.locator('.page-title')).toContainText('Backlog', { timeout: 30000 });
     await page.click('button:has-text("Add Game")');
-    await expect(page.locator('.modal-overlay, [role="dialog"]')).toBeVisible();
+    await expect(page.locator('.modal-overlay, [role="dialog"]')).toBeVisible({ timeout: 5000 });
   });
 });

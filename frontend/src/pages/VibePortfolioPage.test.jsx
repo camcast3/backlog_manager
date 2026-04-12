@@ -54,9 +54,9 @@ import VibePortfolioPage from './VibePortfolioPage';
 import { backlogApi } from '../services/api';
 
 describe('VibePortfolioPage', () => {
-  test('shows loading text initially', () => {
+  test('shows loading spinner initially', () => {
     render(<VibePortfolioPage />);
-    expect(screen.getByText(/Loading your Gamer DNA/)).toBeInTheDocument();
+    expect(document.querySelector('.spinner')).toBeInTheDocument();
   });
 
   test('renders "My Gamer DNA" title after load', async () => {

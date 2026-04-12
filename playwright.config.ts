@@ -5,6 +5,7 @@ export default defineConfig({
   globalSetup: './e2e/global-setup.mjs',
   timeout: 30000,
   retries: 1,
+  workers: process.env.CI ? 1 : undefined,
   use: {
     baseURL: 'http://localhost:5173',
     headless: true,

@@ -24,8 +24,22 @@ export default function VibePortfolioPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div style={{ textAlign: 'center', padding: '3rem' }}>Loading your Gamer DNA…</div>;
-  if (error) return <div className="card" style={{ textAlign: 'center', color: 'var(--danger)' }}>{error}</div>;
+  if (loading) return (
+    <div>
+      <div className="page-header">
+        <h1 className="page-title"><FaDna style={{ marginRight: 8 }} />My Gamer DNA</h1>
+      </div>
+      <div className="spinner" />
+    </div>
+  );
+  if (error) return (
+    <div>
+      <div className="page-header">
+        <h1 className="page-title"><FaDna style={{ marginRight: 8 }} />My Gamer DNA</h1>
+      </div>
+      <div className="card" style={{ textAlign: 'center', color: 'var(--danger)' }}>{error}</div>
+    </div>
+  );
 
   const {
     total_profiled = 0,

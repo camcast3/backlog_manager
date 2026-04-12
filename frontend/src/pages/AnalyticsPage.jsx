@@ -103,8 +103,6 @@ export default function AnalyticsPage() {
     }
   }
 
-  if (loading) return <div className="spinner" />;
-
   const { health, statusDist, trends, genres, platforms, vibes } = data;
 
   return (
@@ -112,6 +110,9 @@ export default function AnalyticsPage() {
       <div className="page-header">
         <h1 className="page-title">Analytics</h1>
       </div>
+
+      {loading && <div className="spinner" />}
+      {loading ? null : (<>
 
       {/* Backlog Health Card */}
       {health && (
@@ -281,6 +282,7 @@ export default function AnalyticsPage() {
           </ResponsiveContainer>
         ) : <EmptyState message="No vibe data yet" />}
       </div>
+      </>)}
     </div>
   );
 }

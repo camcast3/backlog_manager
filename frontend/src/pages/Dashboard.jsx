@@ -65,8 +65,6 @@ export default function Dashboard() {
     setStaleItems((items) => items.filter((i) => i.id !== id));
   }
 
-  if (loading) return <div className="spinner" />;
-
   const xpPct = progress?.level_progress_pct ?? 0;
 
   return (
@@ -78,6 +76,10 @@ export default function Dashboard() {
           <button className="btn-primary" onClick={() => setShowAddModal(true)}>+ Add Game</button>
         </div>
       </div>
+
+      {loading && <div className="spinner" />}
+      {loading ? null : (<>
+
 
       {/* XP / Level bar */}
       {progress && (
@@ -229,6 +231,8 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      </>)}
 
       {showAddModal && (
         <AddGameModal onClose={() => setShowAddModal(false)} onAdded={() => loadAll()} />

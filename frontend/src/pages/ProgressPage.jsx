@@ -45,8 +45,6 @@ export default function ProgressPage() {
     }
   }
 
-  if (loading) return <div className="spinner" />;
-
   const earned = achievements.filter((a) => a.earned);
   const locked = achievements.filter((a) => !a.earned);
 
@@ -88,6 +86,9 @@ export default function ProgressPage() {
       <div className="page-header">
         <h1 className="page-title">Progress</h1>
       </div>
+
+      {loading && <div className="spinner" />}
+      {loading ? null : (<>
 
       {/* Level card */}
       {progress && (
@@ -219,6 +220,7 @@ export default function ProgressPage() {
           </div>
         </>
       )}
+      </>)}
     </div>
   );
 }
