@@ -3,6 +3,7 @@ import { gamesApi, backlogApi, searchApi } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { PLATFORMS, VIBE_INTENSITIES, STORY_PACES } from '../constants';
 import { FaTimes, FaCheck } from 'react-icons/fa';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 const VIBE_QUESTIONS = [
   { key: 'mood', label: 'What mood are you in when you imagine playing this?', placeholder: 'e.g. I want to relax, I\'m craving a challenge, I want a good story...' },
@@ -155,14 +156,16 @@ export default function AddGameModal({ onClose, onAdded }) {
     }
   }
 
+  const trapRef = useFocusTrap(true);
+
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
+      <div className="modal" ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="add-game-modal-title">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 className="modal-title" style={{ margin: 0 }}>
+          <h2 id="add-game-modal-title" className="modal-title" style={{ margin: 0 }}>
             {step === 1 ? 'Add Game' : 'Vibe Interview'}
           </h2>
-          <button onClick={onClose} style={{ background: 'none', color: 'var(--text-muted)', fontSize: '1.25rem' }}><FaTimes /></button>
+          <button onClick={onClose} aria-label="Close dialog" style={{ background: 'none', color: 'var(--text-muted)', fontSize: '1.25rem' }}><FaTimes /></button>
         </div>
 
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>

@@ -3,6 +3,7 @@ import { gamesApi, backlogApi } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { PLATFORMS, VIBE_INTENSITIES, STORY_PACES } from '../constants';
 import { FaTimes } from 'react-icons/fa';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 export default function EditGameModal({ item, onClose, onUpdated }) {
   const toast = useToast();
@@ -69,12 +70,14 @@ export default function EditGameModal({ item, onClose, onUpdated }) {
     }
   }
 
+  const trapRef = useFocusTrap(true);
+
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{ maxWidth: 620 }}>
+      <div className="modal" ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="edit-game-modal-title" style={{ maxWidth: 620 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 className="modal-title" style={{ margin: 0 }}>Edit Game</h2>
-          <button onClick={onClose} style={{ background: 'none', color: 'var(--text-muted)', fontSize: '1.25rem' }}><FaTimes /></button>
+          <h2 id="edit-game-modal-title" className="modal-title" style={{ margin: 0 }}>Edit Game</h2>
+          <button onClick={onClose} aria-label="Close dialog" style={{ background: 'none', color: 'var(--text-muted)', fontSize: '1.25rem' }}><FaTimes /></button>
         </div>
 
         {/* Cover image preview */}

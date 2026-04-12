@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 const WHEEL_COLORS = [
   '#7c3aed', '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
@@ -113,11 +114,13 @@ export default function GamePicker({ games, onClose }) {
     requestAnimationFrame(animate);
   }
 
+  const trapRef = useFocusTrap(true);
+
   if (items.length === 0) {
     return (
       <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-        <div className="modal" style={{ textAlign: 'center', maxWidth: 400 }}>
-          <h2 className="modal-title">Game Picker</h2>
+        <div className="modal" ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="game-picker-title-empty" style={{ textAlign: 'center', maxWidth: 400 }}>
+          <h2 id="game-picker-title-empty" className="modal-title">Game Picker</h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
             No eligible games to pick from. Add more games to your backlog!
           </p>
@@ -129,10 +132,10 @@ export default function GamePicker({ games, onClose }) {
 
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal" style={{ maxWidth: 480, textAlign: 'center' }}>
+      <div className="modal" ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="game-picker-title" style={{ maxWidth: 480, textAlign: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 className="modal-title" style={{ margin: 0 }}>Game Picker</h2>
-          <button onClick={onClose} style={{ background: 'none', color: 'var(--text-muted)', fontSize: '1.25rem' }}><FaTimes /></button>
+          <h2 id="game-picker-title" className="modal-title" style={{ margin: 0 }}>Game Picker</h2>
+          <button onClick={onClose} aria-label="Close dialog" style={{ background: 'none', color: 'var(--text-muted)', fontSize: '1.25rem' }}><FaTimes /></button>
         </div>
 
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>

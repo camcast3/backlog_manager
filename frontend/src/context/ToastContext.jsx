@@ -16,7 +16,12 @@ export function ToastProvider({ children }) {
       {children}
       <div className="toast-container">
         {toasts.map((t) => (
-          <div key={t.id} className={`toast ${t.type}`}>
+          <div
+            key={t.id}
+            className={`toast ${t.type}`}
+            role="alert"
+            aria-live={t.type === 'achievement' || t.type === 'warning' ? 'assertive' : 'polite'}
+          >
             {t.message}
           </div>
         ))}
