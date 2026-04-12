@@ -51,3 +51,14 @@ export const searchApi = {
   covers: (q) => request('GET', `/search/covers?${new URLSearchParams({ q })}`),
   status: () => request('GET', '/search/status'),
 };
+
+// ── Analytics ─────────────────────────────────────────────────
+export const analyticsApi = {
+  completionTrends: () => request('GET', '/analytics/completion-trends'),
+  genreBreakdown:   () => request('GET', '/analytics/genre-breakdown'),
+  platformDist:     () => request('GET', '/analytics/platform-distribution'),
+  playtimeStats:    () => request('GET', '/analytics/playtime-stats'),
+  backlogHealth:    () => request('GET', '/analytics/backlog-health'),
+  vibeMap:          () => request('GET', '/analytics/vibe-map'),
+  statusDist:       () => request('GET', '/analytics/status-distribution'),
+};

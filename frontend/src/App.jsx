@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Nav from './components/Nav';
+import KeyboardShortcuts from './components/KeyboardShortcuts';
 import Dashboard from './pages/Dashboard';
 import BacklogPage from './pages/BacklogPage';
 import GameLibraryPage from './pages/GameLibraryPage';
@@ -13,9 +14,10 @@ export default function App() {
     <BrowserRouter>
       <ThemeProvider>
         <ToastProvider>
-          <div style={{ display: 'flex', minHeight: '100vh' }}>
+          <div className="app-layout">
             <Nav />
-            <main style={{ flex: 1, padding: '2rem', maxWidth: 1100, overflow: 'auto' }}>
+            <KeyboardShortcuts />
+            <main className="main-content">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/backlog" element={<BacklogPage />} />

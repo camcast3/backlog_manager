@@ -7,6 +7,7 @@ import backlogRoutes from './routes/backlog.js';
 import progressRoutes from './routes/progress.js';
 import vibeQuestionsRoutes from './routes/vibeQuestions.js';
 import searchRoutes from './routes/search.js';
+import analyticsRoutes from './routes/analytics.js';
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 const HOST = process.env.HOST ?? '0.0.0.0';
@@ -31,6 +32,7 @@ export function buildServer(opts = {}) {
   fastify.register(progressRoutes, { prefix: '/api/progress' });
   fastify.register(vibeQuestionsRoutes, { prefix: '/api/vibe-questions' });
   fastify.register(searchRoutes, { prefix: '/api/search' });
+  fastify.register(analyticsRoutes, { prefix: '/api/analytics' });
 
   return fastify;
 }
