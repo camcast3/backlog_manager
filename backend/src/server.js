@@ -1,7 +1,12 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import cookie from '@fastify/cookie';
+import session from '@fastify/session';
+import crypto from 'crypto';
 import 'dotenv/config';
 
+import { isAuthEnabled } from './auth/oidcProvider.js';
+import authRoutes from './routes/auth.js';
 import gamesRoutes from './routes/games.js';
 import backlogRoutes from './routes/backlog.js';
 import progressRoutes from './routes/progress.js';
@@ -25,6 +30,18 @@ export function buildServer(opts = {}) {
     origin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
   });
+
+  // Register cookie + session when auth is enabled
+  if (isAuthEnabled()) {
+    fastify.register(cookie);
+    fastify.register(session, {
+      secret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
+      cookie: { secure: false, httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000 },
+    });
+  }
+
+  // Auth routes (works with or without OIDC — /auth/me always responds)
+  fastify.register(authRoutes, { prefix: '/auth' });
 
   // Health check
   fastify.get('/health', async () => ({ status: 'ok', ts: new Date().toISOString() }));
