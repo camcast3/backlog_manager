@@ -5,9 +5,11 @@ import { FaBars, FaTimes } from 'react-icons/fa';
 
 const navItems = [
   { to: '/', label: 'Dashboard' },
+  { to: '/recommend', label: 'What to Play?' },
   { to: '/backlog', label: 'Backlog' },
   { to: '/games', label: 'Game Library' },
   { to: '/progress', label: 'Progress' },
+  { to: '/analytics', label: 'Analytics' },
   { to: '/settings', label: 'Settings' },
 ];
 

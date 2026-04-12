@@ -52,6 +52,13 @@ export const searchApi = {
   status: () => request('GET', '/search/status'),
 };
 
+// ── Sessions ──────────────────────────────────────────────────
+export const sessionsApi = {
+  log: (backlogItemId, data) => request('POST', `/backlog/${backlogItemId}/sessions`, data),
+  list: (backlogItemId) => request('GET', `/backlog/${backlogItemId}/sessions`),
+  rate: (backlogItemId, rating) => request('PATCH', `/backlog/${backlogItemId}/rating`, { rating }),
+};
+
 // ── Analytics ─────────────────────────────────────────────────
 export const analyticsApi = {
   completionTrends: () => request('GET', '/analytics/completion-trends'),
@@ -61,4 +68,9 @@ export const analyticsApi = {
   backlogHealth:    () => request('GET', '/analytics/backlog-health'),
   vibeMap:          () => request('GET', '/analytics/vibe-map'),
   statusDist:       () => request('GET', '/analytics/status-distribution'),
+};
+
+// ── Recommendations ───────────────────────────────────────────
+export const recommendApi = {
+  get: (params = {}) => request('GET', `/recommendations?${new URLSearchParams(params)}`),
 };

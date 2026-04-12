@@ -5,6 +5,8 @@ import Dashboard from './pages/Dashboard';
 import BacklogPage from './pages/BacklogPage';
 import GameLibraryPage from './pages/GameLibraryPage';
 import ProgressPage from './pages/ProgressPage';
+import AnalyticsPage from './pages/AnalyticsPage';
+import RecommendationsPage from './pages/RecommendationsPage';
 import SettingsPage from './pages/SettingsPage';
 import { ToastProvider } from './context/ToastContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -23,6 +25,8 @@ export default function App() {
                 <Route path="/backlog" element={<BacklogPage />} />
                 <Route path="/games" element={<GameLibraryPage />} />
                 <Route path="/progress" element={<ProgressPage />} />
+                <Route path="/recommend" element={<RecommendationsPage />} />
+                <Route path="/analytics" element={<AnalyticsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Routes>
             </main>
