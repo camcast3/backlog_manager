@@ -119,7 +119,7 @@ jobs:
           npx wait-on http://localhost:5173 --timeout 30000
 
       - name: Seed test data
-        run: node --input-type=module -e "import setup from './e2e/global-setup.js'; await setup();"
+        run: node -e "import('./e2e/global-setup.mjs').then(m => m.default())"
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps

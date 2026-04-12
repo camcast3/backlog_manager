@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  globalSetup: './e2e/global-setup.js',
+  globalSetup: './e2e/global-setup.mjs',
   timeout: 30000,
   retries: 1,
   use: {

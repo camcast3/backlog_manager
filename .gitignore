@@ -27,3 +27,5 @@ playwright-report/
 .vscode/
 .idea/
 *.swp
+test-results.json
+test-run.txt

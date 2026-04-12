@@ -83,7 +83,7 @@ async function seedBacklogItems(games) {
   }
 }
 
-export default async function globalSetup() {
+async function globalSetup() {
   console.log('🌱 E2E global setup: seeding test data...');
 
   // Wait for backend to be ready
@@ -108,3 +108,5 @@ export default async function globalSetup() {
     console.warn(`  ⚠ Seed failed (tests may still pass): ${err.message}`);
   }
 }
+
+export default globalSetup;
