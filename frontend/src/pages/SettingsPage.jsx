@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FaFileExport, FaFileImport } from 'react-icons/fa';
 import { THEMES, useTheme } from '../context/ThemeContext';
 import { exportApi } from '../services/api';
+import SteamImport from '../components/SteamImport';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -117,6 +118,9 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+
+      {/* Steam Integration */}
+      <SteamImport onImported={() => showToast('Steam import complete — check your backlog!')} />
 
       {/* Toast notification */}
       {toast && (

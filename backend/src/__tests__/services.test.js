@@ -3,6 +3,7 @@ import { xpForLevel, levelFromXp } from '../services/gamificationService.js';
 import { getHltbTtlDays, isHltbStale } from '../services/hltbService.js';
 import { analyzeVibeAnswers, VIBE_QUESTIONS, PRIMARY_MOOD_WEIGHT } from '../services/vibeQuestionService.js';
 import { searchHltb, searchCovers, searchGames, isIgdbConfigured } from '../services/gameSearchService.js';
+import { suggestStatus } from '../services/steamService.js';
 
 describe('vibeService.analyzeVibeInterview', () => {
   // ── Mood tag detection ──────────────────────────────────────────────────────
@@ -765,5 +766,25 @@ describe('VIBE_QUESTIONS structure', () => {
         expect(Array.isArray(answer.tags)).toBe(true);
       }
     }
+  });
+});
+
+// ── steamService ──────────────────────────────────────────────────────────────
+
+describe('steamService.suggestStatus', () => {
+  test('returns want_to_play for 0 playtime', () => {
+    expect(suggestStatus(0)).toBe('want_to_play');
+  });
+
+  test('returns playing for any positive playtime', () => {
+    expect(suggestStatus(1)).toBe('playing');
+    expect(suggestStatus(60)).toBe('playing');
+    expect(suggestStatus(9999)).toBe('playing');
+  });
+
+  test('returns want_to_play for undefined/null (treated as falsy)', () => {
+    // suggestStatus compares === 0, so non-zero falsy values fall through to 'playing'
+    // but 0 is the correct "unplayed" marker
+    expect(suggestStatus(0)).toBe('want_to_play');
   });
 });

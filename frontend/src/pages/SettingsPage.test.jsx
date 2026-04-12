@@ -15,11 +15,27 @@ vi.mock('../services/api', () => ({
     csv: vi.fn().mockResolvedValue(undefined),
     importData: vi.fn().mockResolvedValue({ imported: 5, skipped: [] }),
   },
+  steamApi: {
+    status: vi.fn().mockResolvedValue({ configured: false }),
+    resolve: vi.fn(),
+    library: vi.fn(),
+    importGames: vi.fn(),
+  },
+}));
+
+vi.mock('../context/ToastContext', () => ({
+  useToast: () => vi.fn(),
 }));
 
 vi.mock('react-icons/fa', () => ({
   FaFileExport: () => <span>export-icon</span>,
   FaFileImport: () => <span>import-icon</span>,
+  FaSteam: () => <span>steam-icon</span>,
+  FaCheck: () => <span>check-icon</span>,
+  FaDownload: () => <span>download-icon</span>,
+  FaTimes: () => <span>times-icon</span>,
+  FaSearch: () => <span>search-icon</span>,
+  FaExclamationTriangle: () => <span>warning-icon</span>,
 }));
 
 import SettingsPage from './SettingsPage';
@@ -74,5 +90,10 @@ describe('SettingsPage', () => {
   test('shows active indicator for current theme', () => {
     render(<SettingsPage />);
     expect(screen.getByText('Active')).toBeInTheDocument();
+  });
+
+  test('renders Steam Import section', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText('Steam Import')).toBeInTheDocument();
   });
 });

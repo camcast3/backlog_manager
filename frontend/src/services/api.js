@@ -95,3 +95,11 @@ export const exportApi = {
   csv: () => downloadFile('/backlog/export?format=csv', 'backlog.csv'),
   importData: (data) => request('POST', '/backlog/import', data),
 };
+
+// ── Steam Integration ────────────────────────────────────────
+export const steamApi = {
+  status: () => request('GET', '/steam/status'),
+  resolve: (username) => request('GET', `/steam/resolve?${new URLSearchParams({ username })}`),
+  library: (steamId) => request('GET', `/steam/library?${new URLSearchParams({ steam_id: steamId })}`),
+  importGames: (games) => request('POST', '/steam/import', { games }),
+};
