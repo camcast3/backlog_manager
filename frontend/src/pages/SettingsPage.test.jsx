@@ -21,6 +21,9 @@ vi.mock('../services/api', () => ({
     library: vi.fn(),
     importGames: vi.fn(),
   },
+  bulkApi: {
+    importGames: vi.fn(),
+  },
 }));
 
 vi.mock('../context/ToastContext', () => ({
@@ -36,6 +39,7 @@ vi.mock('react-icons/fa', () => ({
   FaTimes: () => <span>times-icon</span>,
   FaSearch: () => <span>search-icon</span>,
   FaExclamationTriangle: () => <span>warning-icon</span>,
+  FaListUl: () => <span>list-icon</span>,
 }));
 
 import SettingsPage from './SettingsPage';
@@ -95,5 +99,10 @@ describe('SettingsPage', () => {
   test('renders Steam Import section', () => {
     render(<SettingsPage />);
     expect(screen.getByText('Steam Import')).toBeInTheDocument();
+  });
+
+  test('renders Quick Bulk Add section', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText('Quick Bulk Add')).toBeInTheDocument();
   });
 });

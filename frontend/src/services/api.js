@@ -103,3 +103,8 @@ export const steamApi = {
   library: (steamId) => request('GET', `/steam/library?${new URLSearchParams({ steam_id: steamId })}`),
   importGames: (games) => request('POST', '/steam/import', { games }),
 };
+
+// ── Bulk Import ──────────────────────────────────────────────
+export const bulkApi = {
+  importGames: (games) => request('POST', '/bulk/import', { games }),
+};

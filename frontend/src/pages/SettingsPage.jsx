@@ -3,6 +3,7 @@ import { FaFileExport, FaFileImport } from 'react-icons/fa';
 import { THEMES, useTheme } from '../context/ThemeContext';
 import { exportApi } from '../services/api';
 import SteamImport from '../components/SteamImport';
+import BulkAdd from '../components/BulkAdd';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -121,6 +122,9 @@ export default function SettingsPage() {
 
       {/* Steam Integration */}
       <SteamImport onImported={() => showToast('Steam import complete — check your backlog!')} />
+
+      {/* Bulk Add (Epic, GOG, etc.) */}
+      <BulkAdd onImported={() => showToast('Bulk import complete — check your backlog!')} />
 
       {/* Toast notification */}
       {toast && (
