@@ -1,5 +1,5 @@
 import * as FaIcons from 'react-icons/fa';
-import { PLAY_MOTIVATIONS, EMOTIONAL_TONES, ENERGY_LEVELS } from '../constants';
+import { PLAY_MOTIVATIONS, EMOTIONAL_TONES, ENERGY_LEVELS, VIBE_INTENSITIES } from '../constants';
 
 function getIcon(name) {
   return FaIcons[name] || null;
@@ -8,12 +8,14 @@ function getIcon(name) {
 export default function VibeBadge({ intensity, motivation, emotionalTone, compact = false }) {
   if (!intensity && !motivation && !emotionalTone) return null;
 
+  // Check both ENERGY_LEVELS and VIBE_INTENSITIES for backward compatibility
   const energyInfo = ENERGY_LEVELS.find(e => e.value === intensity);
+  const intensityInfo = !energyInfo ? VIBE_INTENSITIES.find(v => v.value === intensity) : null;
   const motivationInfo = PLAY_MOTIVATIONS.find(m => m.value === motivation);
   const toneInfo = EMOTIONAL_TONES.find(t => t.value === emotionalTone);
 
   if (compact) {
-    const label = energyInfo?.label || intensity;
+    const label = energyInfo?.label || intensityInfo?.label || intensity;
     return (
       <span 
         className={`badge badge-${intensity || 'moderate'}`}
@@ -24,15 +26,17 @@ export default function VibeBadge({ intensity, motivation, emotionalTone, compac
     );
   }
 
+  const label = energyInfo?.label || intensityInfo?.label || intensity;
+
   return (
     <div className="vibe-badge-full" style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', alignItems: 'center' }}>
-      {energyInfo && (
+      {intensity && (
         <span 
           className={`badge badge-${intensity}`}
           style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}
         >
-          {(() => { const Icon = getIcon(energyInfo.icon); return Icon ? <Icon size={10} /> : null; })()}
-          {energyInfo.label}
+          {energyInfo && (() => { const Icon = getIcon(energyInfo.icon); return Icon ? <Icon size={10} /> : null; })()}
+          {label}
         </span>
       )}
 

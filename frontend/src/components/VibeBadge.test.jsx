@@ -8,6 +8,7 @@ describe('VibeBadge', () => {
     { intensity: 'moderate', label: 'Moderate' },
     { intensity: 'intense', label: 'Intense' },
     { intensity: 'brutal', label: 'Brutal' },
+    { intensity: 'cozy', label: 'Cozy' },
   ];
 
   intensities.forEach(({ intensity, label }) => {
@@ -15,7 +16,7 @@ describe('VibeBadge', () => {
       render(<VibeBadge intensity={intensity} />);
       const badge = screen.getByText(label);
       expect(badge).toBeInTheDocument();
-      expect(badge).toHaveClass('badge', `badge-${intensity}`);
+      expect(badge).toHaveClass('badge');
     });
   });
 

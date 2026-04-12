@@ -20,6 +20,7 @@ vi.mock('react-icons/fa', () => ({
   FaPaintBrush: () => <span>brush</span>,
   FaDice: () => <span>dice</span>,
   FaClock: () => <span>clock</span>,
+  FaDoorOpen: () => <span>door</span>,
 }));
 
 import RecommendationsPage from './RecommendationsPage';
