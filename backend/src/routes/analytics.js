@@ -1,9 +1,11 @@
-import db from '../db/index.js';
+import getDb from '../db/index.js';
 
 export default async function analyticsRoutes(fastify) {
+  const sql = getDb();
+
   // Completion trends - games completed per month (last 12 months)
   fastify.get('/completion-trends', async () => {
-    const result = await db.query(`
+    const rows = await sql`
       SELECT 
         TO_CHAR(date_completed, 'YYYY-MM') as month,
         COUNT(*) as count
@@ -12,13 +14,13 @@ export default async function analyticsRoutes(fastify) {
         AND date_completed >= CURRENT_DATE - INTERVAL '12 months'
       GROUP BY TO_CHAR(date_completed, 'YYYY-MM')
       ORDER BY month
-    `);
-    return result.rows;
+    `;
+    return rows;
   });
 
   // Genre breakdown - count of games per genre
   fastify.get('/genre-breakdown', async () => {
-    const result = await db.query(`
+    const rows = await sql`
       SELECT g.genre, COUNT(*) as count
       FROM backlog_items bi
       JOIN games g ON bi.game_id = g.id
@@ -26,39 +28,39 @@ export default async function analyticsRoutes(fastify) {
       GROUP BY g.genre
       ORDER BY count DESC
       LIMIT 10
-    `);
-    return result.rows;
+    `;
+    return rows;
   });
 
   // Platform distribution
   fastify.get('/platform-distribution', async () => {
-    const result = await db.query(`
+    const rows = await sql`
       SELECT g.platform, COUNT(*) as count
       FROM backlog_items bi
       JOIN games g ON bi.game_id = g.id
       GROUP BY g.platform
       ORDER BY count DESC
       LIMIT 15
-    `);
-    return result.rows;
+    `;
+    return rows;
   });
 
   // Playtime stats
   fastify.get('/playtime-stats', async () => {
-    const result = await db.query(`
+    const [stats] = await sql`
       SELECT 
         COALESCE(SUM(hours_played), 0) as total_hours,
         COALESCE(AVG(hours_played) FILTER (WHERE hours_played > 0), 0) as avg_hours,
         COUNT(*) FILTER (WHERE status = 'completed') as completed_count,
         COUNT(*) as total_count
       FROM backlog_items
-    `);
-    return result.rows[0];
+    `;
+    return stats;
   });
 
   // Backlog health - estimated time to clear
   fastify.get('/backlog-health', async () => {
-    const statsResult = await db.query(`
+    const [stats] = await sql`
       SELECT 
         COUNT(*) FILTER (WHERE status IN ('want_to_play', 'playing', 'on_hold')) as remaining,
         COUNT(*) FILTER (WHERE status = 'completed') as completed,
@@ -66,8 +68,7 @@ export default async function analyticsRoutes(fastify) {
         COALESCE(AVG(g.hltb_main_story) FILTER (WHERE bi.status IN ('want_to_play', 'playing', 'on_hold') AND g.hltb_main_story IS NOT NULL), 0) as avg_remaining_hours
       FROM backlog_items bi
       JOIN games g ON bi.game_id = g.id
-    `);
-    const stats = statsResult.rows[0];
+    `;
     const monthlyRate = stats.completed_last_6mo / 6;
     const estimatedMonths = monthlyRate > 0 ? Math.round(stats.remaining / monthlyRate) : null;
     const estimatedHours = Math.round(stats.remaining * stats.avg_remaining_hours);
@@ -81,24 +82,24 @@ export default async function analyticsRoutes(fastify) {
 
   // Vibe distribution
   fastify.get('/vibe-map', async () => {
-    const result = await db.query(`
+    const rows = await sql`
       SELECT g.vibe_intensity, COUNT(*) as count
       FROM backlog_items bi
       JOIN games g ON bi.game_id = g.id
       WHERE g.vibe_intensity IS NOT NULL
       GROUP BY g.vibe_intensity
-    `);
-    return result.rows;
+    `;
+    return rows;
   });
 
   // Status distribution
   fastify.get('/status-distribution', async () => {
-    const result = await db.query(`
+    const rows = await sql`
       SELECT status, COUNT(*) as count
       FROM backlog_items
       GROUP BY status
       ORDER BY count DESC
-    `);
-    return result.rows;
+    `;
+    return rows;
   });
 }

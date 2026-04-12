@@ -1,11 +1,13 @@
-import db from '../db/index.js';
+import getDb from '../db/index.js';
 
 export default async function recommendationRoutes(fastify) {
+  const sql = getDb();
+
   fastify.get('/', async (req) => {
     const { mood, session_length, energy } = req.query;
 
     // Get all eligible games (want_to_play or playing)
-    const result = await db.query(`
+    const games = await sql`
       SELECT bi.id, bi.status, bi.priority, bi.last_activity_date, bi.hours_played,
              g.title as game_title, g.platform, g.genre, g.cover_image_url,
              g.hltb_main_story, g.vibe_intensity, g.vibe_story_pace, g.vibe_mood,
@@ -15,9 +17,8 @@ export default async function recommendationRoutes(fastify) {
       LEFT JOIN vibe_profiles vp ON vp.backlog_item_id = bi.id
       WHERE bi.status IN ('want_to_play', 'playing', 'on_hold')
       ORDER BY bi.priority DESC
-    `);
+    `;
 
-    const games = result.rows;
     if (games.length === 0) return [];
 
     // Score each game

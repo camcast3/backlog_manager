@@ -20,6 +20,7 @@ const mockSql = Object.assign(
 
 jest.unstable_mockModule('../db/index.js', () => ({
   default: () => mockSql,
+  getDb: () => mockSql,
 }));
 
 // Dynamic import must come AFTER the mock is registered
@@ -462,5 +463,401 @@ describe('GET /api/search/status', () => {
     expect(body.message).toMatch(/TWITCH_CLIENT_ID/);
     if (origId) process.env.TWITCH_CLIENT_ID = origId;
     if (origSecret) process.env.TWITCH_CLIENT_SECRET = origSecret;
+  });
+});
+
+// ── Analytics routes ──────────────────────────────────────────────────────────
+describe('Analytics routes', () => {
+  test('GET /api/analytics/completion-trends returns trends', async () => {
+    queryQueue.push([{ month: '2026-03', count: 5 }]);
+    const res = await app.inject({ method: 'GET', url: '/api/analytics/completion-trends' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body[0].month).toBe('2026-03');
+    expect(body[0].count).toBe(5);
+  });
+
+  test('GET /api/analytics/completion-trends returns empty array when no data', async () => {
+    queryQueue.push([]);
+    const res = await app.inject({ method: 'GET', url: '/api/analytics/completion-trends' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual([]);
+  });
+
+  test('GET /api/analytics/genre-breakdown returns genres', async () => {
+    queryQueue.push([{ genre: 'RPG', count: 10 }, { genre: 'Action', count: 7 }]);
+    const res = await app.inject({ method: 'GET', url: '/api/analytics/genre-breakdown' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body).toHaveLength(2);
+    expect(body[0].genre).toBe('RPG');
+  });
+
+  test('GET /api/analytics/platform-distribution returns platforms', async () => {
+    queryQueue.push([{ platform: 'PC (Steam)', count: 15 }, { platform: 'PS5', count: 8 }]);
+    const res = await app.inject({ method: 'GET', url: '/api/analytics/platform-distribution' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body[0].platform).toBe('PC (Steam)');
+  });
+
+  test('GET /api/analytics/playtime-stats returns stats object', async () => {
+    queryQueue.push([{ total_hours: 120, avg_hours: 15, completed_count: 8, total_count: 20 }]);
+    const res = await app.inject({ method: 'GET', url: '/api/analytics/playtime-stats' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.total_hours).toBe(120);
+    expect(body.avg_hours).toBe(15);
+    expect(body.completed_count).toBe(8);
+    expect(body.total_count).toBe(20);
+  });
+
+  test('GET /api/analytics/backlog-health returns health metrics', async () => {
+    queryQueue.push([{
+      remaining: 10, completed: 20, completed_last_6mo: 6, avg_remaining_hours: 15,
+    }]);
+    const res = await app.inject({ method: 'GET', url: '/api/analytics/backlog-health' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.remaining).toBe(10);
+    expect(body.monthly_completion_rate).toBe(1);
+    expect(body.estimated_months).toBe(10);
+    expect(body.estimated_hours).toBe(150);
+  });
+
+  test('GET /api/analytics/backlog-health handles zero completion rate', async () => {
+    queryQueue.push([{
+      remaining: 5, completed: 0, completed_last_6mo: 0, avg_remaining_hours: 10,
+    }]);
+    const res = await app.inject({ method: 'GET', url: '/api/analytics/backlog-health' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.estimated_months).toBeNull();
+  });
+
+  test('GET /api/analytics/vibe-map returns vibe distribution', async () => {
+    queryQueue.push([{ vibe_intensity: 'chill', count: 5 }, { vibe_intensity: 'intense', count: 3 }]);
+    const res = await app.inject({ method: 'GET', url: '/api/analytics/vibe-map' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body[0].vibe_intensity).toBe('chill');
+  });
+
+  test('GET /api/analytics/status-distribution returns statuses', async () => {
+    queryQueue.push([{ status: 'playing', count: 3 }, { status: 'completed', count: 10 }]);
+    const res = await app.inject({ method: 'GET', url: '/api/analytics/status-distribution' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body).toHaveLength(2);
+  });
+});
+
+// ── Recommendations route ─────────────────────────────────────────────────────
+describe('Recommendations route', () => {
+  test('GET /api/recommendations returns scored games', async () => {
+    queryQueue.push([{
+      id: 1, status: 'want_to_play', priority: 80, game_title: 'Hades',
+      mood_match: 'challenge', vibe_intensity: 'intense', hltb_main_story: 20,
+      expected_session_length: 'medium', vibe_tags: ['challenge', 'action'],
+      last_activity_date: null, hours_played: 0, platform: 'PC',
+      genre: 'Roguelite', cover_image_url: null, vibe_story_pace: null, vibe_mood: null,
+    }]);
+    const res = await app.inject({ method: 'GET', url: '/api/recommendations?mood=challenge&energy=high' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
+    expect(body[0].game_title).toBe('Hades');
+    expect(typeof body[0].score).toBe('number');
+    expect(typeof body[0].match_pct).toBe('number');
+    expect(Array.isArray(body[0].reasons)).toBe(true);
+  });
+
+  test('GET /api/recommendations returns empty array when no games', async () => {
+    queryQueue.push([]);
+    const res = await app.inject({ method: 'GET', url: '/api/recommendations?mood=challenge' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual([]);
+  });
+
+  test('GET /api/recommendations works without query params', async () => {
+    queryQueue.push([{
+      id: 1, status: 'playing', priority: 60, game_title: 'Celeste',
+      mood_match: null, vibe_intensity: 'moderate', hltb_main_story: 8,
+      expected_session_length: 'short', vibe_tags: null,
+      last_activity_date: null, hours_played: 3, platform: 'Switch',
+      genre: 'Platformer', cover_image_url: null, vibe_story_pace: null, vibe_mood: null,
+    }]);
+    const res = await app.inject({ method: 'GET', url: '/api/recommendations' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.length).toBeGreaterThan(0);
+  });
+
+  test('GET /api/recommendations scores mood match higher', async () => {
+    queryQueue.push([
+      {
+        id: 1, status: 'want_to_play', priority: 50, game_title: 'Game A',
+        mood_match: 'destress', vibe_intensity: 'chill', hltb_main_story: 10,
+        expected_session_length: null, vibe_tags: ['destress'],
+        last_activity_date: null, hours_played: 0, platform: 'PC',
+        genre: 'Puzzle', cover_image_url: null, vibe_story_pace: null, vibe_mood: null,
+      },
+      {
+        id: 2, status: 'want_to_play', priority: 50, game_title: 'Game B',
+        mood_match: null, vibe_intensity: 'intense', hltb_main_story: 40,
+        expected_session_length: null, vibe_tags: null,
+        last_activity_date: null, hours_played: 0, platform: 'PC',
+        genre: 'FPS', cover_image_url: null, vibe_story_pace: null, vibe_mood: null,
+      },
+    ]);
+    const res = await app.inject({ method: 'GET', url: '/api/recommendations?mood=destress&energy=low' });
+    const body = res.json();
+    expect(body[0].game_title).toBe('Game A');
+  });
+});
+
+// ── Session routes ────────────────────────────────────────────────────────────
+describe('Session routes', () => {
+  test('POST /api/backlog/:id/sessions returns 201 on success', async () => {
+    // 1: SELECT backlog item exists
+    queryQueue.push([{ id: 1, game_id: 1, status: 'playing', hours_played: 5 }]);
+    // 2: INSERT play_session RETURNING *
+    queryQueue.push([{ id: 10, backlog_item_id: 1, duration_minutes: 60, notes: 'Great session', played_at: '2026-01-15' }]);
+    // 3: UPDATE backlog_items hours_played
+    queryQueue.push([]);
+    // 4: awardXp — UPDATE user_progress RETURNING *
+    queryQueue.push([{ xp: 105, level: 1 }]);
+    // 5: SELECT COUNT play_sessions
+    queryQueue.push([{ count: '1' }]);
+    // 6: earnAchievement('first_session') — SELECT achievement
+    queryQueue.push([{ id: 1, key: 'first_session', title: 'First Session' }]);
+    // 7: earnAchievement — SELECT earned_achievements (not earned yet)
+    queryQueue.push([]);
+    // 8: earnAchievement — INSERT earned_achievements
+    queryQueue.push([]);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/backlog/1/sessions',
+      payload: { duration_minutes: 60, notes: 'Great session', played_at: '2026-01-15' },
+    });
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body.session).toBeDefined();
+    expect(body.session.duration_minutes).toBe(60);
+    expect(body.gamification).toBeDefined();
+  });
+
+  test('POST /api/backlog/:id/sessions returns 400 for invalid duration', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/backlog/1/sessions',
+      payload: { duration_minutes: -5 },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toMatch(/duration_minutes/);
+  });
+
+  test('POST /api/backlog/:id/sessions returns 400 for missing duration', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/backlog/1/sessions',
+      payload: {},
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toMatch(/duration_minutes/);
+  });
+
+  test('POST /api/backlog/:id/sessions returns 404 for missing backlog item', async () => {
+    queryQueue.push([]); // SELECT returns empty
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/backlog/999/sessions',
+      payload: { duration_minutes: 30 },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(res.json().error).toBe('Backlog item not found');
+  });
+
+  test('GET /api/backlog/:id/sessions returns sessions array', async () => {
+    queryQueue.push([
+      { id: 1, backlog_item_id: 1, duration_minutes: 45, played_at: '2026-01-10' },
+      { id: 2, backlog_item_id: 1, duration_minutes: 60, played_at: '2026-01-12' },
+    ]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog/1/sessions' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body).toHaveLength(2);
+  });
+
+  test('GET /api/backlog/:id/sessions returns empty array when none', async () => {
+    queryQueue.push([]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog/1/sessions' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual([]);
+  });
+
+  test('PATCH /api/backlog/:id/rating returns updated item on success', async () => {
+    queryQueue.push([{ id: 1, rating: 8, status: 'playing' }]);
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/api/backlog/1/rating',
+      payload: { rating: 8 },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.rating).toBe(8);
+  });
+
+  test('PATCH /api/backlog/:id/rating returns 400 for invalid rating', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/api/backlog/1/rating',
+      payload: { rating: 11 },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toMatch(/Rating/);
+  });
+
+  test('PATCH /api/backlog/:id/rating returns 400 for zero rating', async () => {
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/api/backlog/1/rating',
+      payload: { rating: 0 },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toMatch(/Rating/);
+  });
+
+  test('PATCH /api/backlog/:id/rating returns 404 for missing item', async () => {
+    queryQueue.push([]); // UPDATE RETURNING returns empty
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/api/backlog/999/rating',
+      payload: { rating: 7 },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(res.json().error).toBe('Backlog item not found');
+  });
+});
+
+// ── Export/Import routes ──────────────────────────────────────────────────────
+describe('Export/Import routes', () => {
+  test('GET /api/backlog/export?format=json returns JSON with Content-Disposition', async () => {
+    queryQueue.push([
+      { game_title: 'Hades', platform: 'PC', status: 'completed', priority: 80 },
+      { game_title: 'Celeste', platform: 'Switch', status: 'playing', priority: 70 },
+    ]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog/export?format=json' });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-disposition']).toMatch(/backlog\.json/);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body).toHaveLength(2);
+    expect(body[0].game_title).toBe('Hades');
+  });
+
+  test('GET /api/backlog/export?format=csv returns CSV text', async () => {
+    queryQueue.push([
+      { game_title: 'Hades', platform: 'PC', genre: 'Roguelite', status: 'completed',
+        priority: 80, rating: 9, hours_played: 45, personal_notes: null,
+        why_i_want_to_play: null, vibe_intensity: 'intense', mood_match: 'challenge',
+        vibe_tags: ['action', 'challenge'], date_added: '2026-01-01' },
+    ]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog/export?format=csv' });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toMatch(/text\/csv/);
+    expect(res.headers['content-disposition']).toMatch(/backlog\.csv/);
+    const text = res.body;
+    expect(text).toContain('game_title');
+    expect(text).toContain('Hades');
+  });
+
+  test('GET /api/backlog/export defaults to JSON when no format', async () => {
+    queryQueue.push([]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog/export' });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-disposition']).toMatch(/backlog\.json/);
+  });
+
+  test('POST /api/backlog/import imports new items', async () => {
+    // 1: SELECT game by title+platform — not found
+    queryQueue.push([]);
+    // 2: INSERT game RETURNING id
+    queryQueue.push([{ id: 10 }]);
+    // 3: SELECT existing backlog item — not found
+    queryQueue.push([]);
+    // 4: INSERT backlog_items RETURNING id
+    queryQueue.push([{ id: 20 }]);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/backlog/import',
+      payload: [{ game_title: 'New Game', platform: 'PC', status: 'want_to_play' }],
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.imported).toBe(1);
+    expect(body.skipped).toHaveLength(0);
+    expect(body.total).toBe(1);
+  });
+
+  test('POST /api/backlog/import skips duplicates', async () => {
+    // 1: SELECT game by title+platform — found
+    queryQueue.push([{ id: 5 }]);
+    // 2: SELECT existing backlog item — found (duplicate)
+    queryQueue.push([{ id: 15 }]);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/backlog/import',
+      payload: [{ game_title: 'Existing Game', platform: 'PC' }],
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.imported).toBe(0);
+    expect(body.skipped).toHaveLength(1);
+    expect(body.skipped[0].reason).toBe('already in backlog');
+  });
+
+  test('POST /api/backlog/import skips items missing game_title', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/backlog/import',
+      payload: [{ platform: 'PC' }],
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.imported).toBe(0);
+    expect(body.skipped).toHaveLength(1);
+    expect(body.skipped[0].reason).toBe('missing game_title');
+  });
+
+  test('POST /api/backlog/import returns 400 for non-array body', async () => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/backlog/import',
+      payload: { game_title: 'Not an array' },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(res.json().error).toMatch(/array/);
+  });
+});
+
+// ── Auth routes ───────────────────────────────────────────────────────────────
+describe('Auth routes', () => {
+  test('GET /auth/me returns unauthenticated when OIDC not configured', async () => {
+    const res = await app.inject({ method: 'GET', url: '/auth/me' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.authenticated).toBe(false);
+    expect(body.authEnabled).toBe(false);
   });
 });
