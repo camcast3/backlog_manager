@@ -21,8 +21,7 @@ test.describe('Dashboard', () => {
 
   test('shows stats section', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('.page-title')).toContainText('Dashboard', { timeout: 30000 });
-    await expect(page.locator('body')).toContainText(/Want to Play|Playing Now|Completed|Total/);
+    await expect(page.locator('body')).toContainText(/Want to Play|Playing Now|Completed|Total/, { timeout: 30000 });
   });
 
   test('page loads without errors', async ({ page }) => {

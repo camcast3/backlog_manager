@@ -43,13 +43,11 @@ describe('KeyboardShortcuts', () => {
     expect(screen.queryByText('Keyboard Shortcuts')).not.toBeInTheDocument();
   });
 
-  it('pressing Escape closes help modal when no modal-overlay blocks', () => {
+  it('pressing Escape closes help modal', () => {
     render(<KeyboardShortcuts onNewGame={onNewGame} onPickForMe={onPickForMe} />);
     fireEvent.keyDown(window, { key: '?' });
     expect(screen.getByText('Keyboard Shortcuts')).toBeInTheDocument();
-    // The component's own modal-overlay blocks keydown handler,
-    // so close via overlay click (the intended close mechanism)
-    fireEvent.click(document.querySelector('.modal-overlay'));
+    fireEvent.keyDown(window, { key: 'Escape' });
     expect(screen.queryByText('Keyboard Shortcuts')).not.toBeInTheDocument();
   });
 

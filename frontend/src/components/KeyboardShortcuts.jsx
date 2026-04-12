@@ -10,6 +10,14 @@ export default function KeyboardShortcuts({ onNewGame, onPickForMe }) {
     function handleKeyDown(e) {
       // Don't trigger shortcuts when typing in inputs
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+
+      // Allow Escape to close our own help modal even when modal-overlay exists
+      if (e.key === 'Escape' && showHelp) {
+        e.preventDefault();
+        setShowHelp(false);
+        return;
+      }
+
       // Don't trigger when modal is open (check for modal-overlay)
       if (document.querySelector('.modal-overlay')) return;
 
@@ -27,12 +35,6 @@ export default function KeyboardShortcuts({ onNewGame, onPickForMe }) {
         case '?':
           e.preventDefault();
           setShowHelp(h => !h);
-          break;
-        case 'Escape':
-          if (showHelp) {
-            e.preventDefault();
-            setShowHelp(false);
-          }
           break;
         case '1':
           e.preventDefault();
