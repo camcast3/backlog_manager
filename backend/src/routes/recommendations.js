@@ -10,8 +10,10 @@ export default async function recommendationRoutes(fastify) {
     const games = await sql`
       SELECT bi.id, bi.status, bi.priority, bi.last_activity_date, bi.hours_played,
              g.title as game_title, g.platform, g.genre, g.cover_image_url,
-             g.hltb_main_story, g.vibe_intensity, g.vibe_story_pace, g.vibe_mood,
-             vp.tags as vibe_tags, vp.mood_match, vp.expected_session_length
+             g.hltb_main_story, g.hltb_completionist, g.vibe_intensity, g.vibe_story_pace, g.vibe_mood,
+             g.emotional_tone, g.social_style,
+             vp.tags as vibe_tags, vp.mood_match, vp.expected_session_length,
+             vp.play_motivation, vp.emotional_tone_pref, vp.play_style, vp.energy_level
       FROM backlog_items bi
       JOIN games g ON bi.game_id = g.id
       LEFT JOIN vibe_profiles vp ON vp.backlog_item_id = bi.id
@@ -93,6 +95,33 @@ export default async function recommendationRoutes(fastify) {
         reasons.push('Already started');
       }
 
+      // Play motivation match (high weight)
+      if (mood && game.play_motivation) {
+        const motivationMoodMap = {
+          escapism: 'destress', challenge: 'challenge', story: 'story',
+          mastery: 'challenge', relaxation: 'destress', social: 'social',
+          exploration: 'adventure', creative: 'creative', nostalgia: 'nostalgia',
+        };
+        if (motivationMoodMap[game.play_motivation] === mood) {
+          score += 12;
+          reasons.push('Motivation match');
+        }
+      }
+
+      // Emotional tone match
+      if (game.emotional_tone && game.emotional_tone_pref) {
+        if (game.emotional_tone === game.emotional_tone_pref) {
+          score += 7;
+          reasons.push('Perfect atmosphere');
+        }
+      }
+
+      // Play style match
+      if (game.play_style === 'completionist' && game.hltb_completionist) {
+        score += 4;
+        reasons.push('Great for completionists');
+      }
+
       if (reasons.length === 0) reasons.push('In your backlog');
 
       return { ...game, score: Math.round(score * 10) / 10, reasons };
@@ -102,7 +131,7 @@ export default async function recommendationRoutes(fastify) {
     scored.sort((a, b) => b.score - a.score);
     return scored.slice(0, 5).map(g => ({
       ...g,
-      match_pct: Math.min(100, Math.round((g.score / 40) * 100)),
+      match_pct: Math.min(100, Math.round((g.score / 55) * 100)),
     }));
   });
 }

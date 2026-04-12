@@ -1,93 +1,319 @@
 /**
- * Structured vibe-interview question bank.
+ * Structured vibe-interview question bank — v2 (psychology-informed).
  *
- * Five focused questions cover every dimension of a player's mood without
+ * Six focused questions cover every dimension of a player's mood without
  * requiring them to type anything.  Each answer choice carries a set of
- * vibe tags and, optionally, a mood_weight (used to elect the dominant mood)
- * and a session_hint (used to set expected_session_length).
+ * vibe tags and, optionally, a mood_weight (used to elect the dominant mood),
+ * a session_hint, motivation_value, energy_hint, tone_value, or style_value.
  *
- * mood_weight on the primary 'mood' question is multiplied by PRIMARY_MOOD_WEIGHT
- * so that question dominates the final mood_match when answers conflict.
+ * Icons use react-icons name strings (e.g. 'FaCouch') — the frontend maps
+ * these to actual components.
+ *
+ * mood_weight on the primary 'play_motivation' question is multiplied by
+ * PRIMARY_MOOD_WEIGHT so that question dominates the final mood_match when
+ * answers conflict.
  */
 
 export const PRIMARY_MOOD_WEIGHT = 3;
 
 export const VIBE_QUESTIONS = [
-  // ── 1. Primary mood ─────────────────────────────────────────────────────────
+  // ── 1. Play motivation (primary mood driver) ──────────────────────────────
   {
-    id: 'mood',
-    question: 'What kind of experience are you chasing?',
+    id: 'play_motivation',
+    question: 'Why do you want to play this game?',
     type: 'single',
     required: true,
     answers: [
       {
-        id: 'destress',
-        emoji: '😌',
-        label: 'Relax & decompress',
-        tags: ['destress'],
+        id: 'escapism',
+        icon: 'FaDoorOpen',
+        label: 'Escape into another world',
+        tags: ['escapism'],
         mood_weight: 'destress',
-        session_hint: null,
+        motivation_value: 'escapism',
       },
       {
         id: 'challenge',
-        emoji: '💀',
-        label: 'Crush a hard challenge',
+        icon: 'FaSkull',
+        label: 'Test my skills on something hard',
         tags: ['challenge'],
         mood_weight: 'challenge',
-        session_hint: null,
+        motivation_value: 'challenge',
       },
       {
         id: 'story',
-        emoji: '📖',
-        label: 'Get lost in a story',
+        icon: 'FaBook',
+        label: 'Experience an incredible story',
         tags: ['story'],
         mood_weight: 'story',
-        session_hint: null,
+        motivation_value: 'story',
       },
       {
-        id: 'nostalgia',
-        emoji: '🕹️',
-        label: 'Nostalgia trip',
-        tags: ['nostalgia'],
-        mood_weight: 'nostalgia',
-        session_hint: null,
+        id: 'mastery',
+        icon: 'FaTrophy',
+        label: 'Master the mechanics, 100% it',
+        tags: ['challenge', 'mastery'],
+        mood_weight: 'challenge',
+        motivation_value: 'mastery',
       },
       {
-        id: 'adventure',
-        emoji: '🗺️',
-        label: 'Explore an open world',
-        tags: ['adventure'],
-        mood_weight: 'adventure',
-        session_hint: null,
-      },
-      {
-        id: 'competition',
-        emoji: '🏆',
-        label: 'Compete & climb ranks',
-        tags: ['competition'],
-        mood_weight: 'competition',
-        session_hint: null,
+        id: 'relaxation',
+        icon: 'FaCouch',
+        label: 'Wind down and decompress',
+        tags: ['destress'],
+        mood_weight: 'destress',
+        motivation_value: 'relaxation',
       },
       {
         id: 'social',
-        emoji: '👥',
-        label: 'Co-op with friends',
+        icon: 'FaUsers',
+        label: 'Play with or against others',
         tags: ['social'],
         mood_weight: 'social',
-        session_hint: null,
+        motivation_value: 'social',
+      },
+      {
+        id: 'exploration',
+        icon: 'FaCompass',
+        label: 'Discover and explore freely',
+        tags: ['adventure'],
+        mood_weight: 'adventure',
+        motivation_value: 'exploration',
       },
       {
         id: 'creative',
-        emoji: '🎨',
-        label: 'Build & create freely',
+        icon: 'FaPaintBrush',
+        label: 'Build, create, express myself',
         tags: ['creative'],
         mood_weight: 'creative',
-        session_hint: null,
+        motivation_value: 'creative',
+      },
+      {
+        id: 'nostalgia',
+        icon: 'FaGamepad',
+        label: 'Revisit something I love',
+        tags: ['nostalgia'],
+        mood_weight: 'nostalgia',
+        motivation_value: 'nostalgia',
+      },
+      {
+        id: 'hype',
+        icon: 'FaFire',
+        label: "Everyone's playing it right now",
+        tags: [],
+        mood_weight: null,
+        motivation_value: 'hype',
       },
     ],
   },
 
-  // ── 2. Session length ────────────────────────────────────────────────────────
+  // ── 2. Energy level ────────────────────────────────────────────────────────
+  {
+    id: 'energy_level',
+    question: 'What energy level fits your mood?',
+    type: 'single',
+    required: true,
+    answers: [
+      {
+        id: 'cozy',
+        icon: 'FaMugHot',
+        label: 'Cozy blanket vibes — warm & safe',
+        tags: ['destress'],
+        mood_weight: null,
+        energy_hint: 'cozy',
+      },
+      {
+        id: 'chill',
+        icon: 'FaCloudSun',
+        label: 'Chill but engaged — low stress',
+        tags: ['destress'],
+        mood_weight: null,
+        energy_hint: 'chill',
+      },
+      {
+        id: 'steady',
+        icon: 'FaHiking',
+        label: 'Ready for a solid adventure',
+        tags: [],
+        mood_weight: null,
+        energy_hint: 'steady',
+      },
+      {
+        id: 'intense',
+        icon: 'FaBolt',
+        label: "Locked in — let's go",
+        tags: ['challenge'],
+        mood_weight: null,
+        energy_hint: 'intense',
+      },
+      {
+        id: 'brutal',
+        icon: 'FaSkullCrossbones',
+        label: 'Break me. I dare you.',
+        tags: ['challenge'],
+        mood_weight: null,
+        energy_hint: 'brutal',
+      },
+    ],
+  },
+
+  // ── 3. Emotional tone ──────────────────────────────────────────────────────
+  {
+    id: 'emotional_tone',
+    question: 'What atmosphere are you craving?',
+    type: 'single',
+    required: false,
+    answers: [
+      {
+        id: 'heartwarming',
+        icon: 'FaHeart',
+        label: 'Heartwarming & uplifting',
+        tags: ['destress'],
+        mood_weight: null,
+        tone_value: 'heartwarming',
+      },
+      {
+        id: 'dark',
+        icon: 'FaMoon',
+        label: 'Dark & gritty',
+        tags: [],
+        mood_weight: null,
+        tone_value: 'dark',
+      },
+      {
+        id: 'whimsical',
+        icon: 'FaMagic',
+        label: 'Whimsical & playful',
+        tags: ['creative'],
+        mood_weight: null,
+        tone_value: 'whimsical',
+      },
+      {
+        id: 'epic',
+        icon: 'FaCrown',
+        label: 'Grand & epic',
+        tags: ['adventure'],
+        mood_weight: null,
+        tone_value: 'epic',
+      },
+      {
+        id: 'mysterious',
+        icon: 'FaSearch',
+        label: 'Mysterious & intriguing',
+        tags: ['adventure'],
+        mood_weight: null,
+        tone_value: 'mysterious',
+      },
+      {
+        id: 'tense',
+        icon: 'FaExclamationTriangle',
+        label: 'Tense & thrilling',
+        tags: ['challenge'],
+        mood_weight: null,
+        tone_value: 'tense',
+      },
+      {
+        id: 'peaceful',
+        icon: 'FaLeaf',
+        label: 'Peaceful & serene',
+        tags: ['destress'],
+        mood_weight: null,
+        tone_value: 'peaceful',
+      },
+      {
+        id: 'humorous',
+        icon: 'FaLaugh',
+        label: 'Funny & lighthearted',
+        tags: [],
+        mood_weight: null,
+        tone_value: 'humorous',
+      },
+      {
+        id: 'melancholic',
+        icon: 'FaCloudRain',
+        label: 'Bittersweet & emotional',
+        tags: ['story'],
+        mood_weight: null,
+        tone_value: 'melancholic',
+      },
+      {
+        id: 'nostalgic',
+        icon: 'FaClock',
+        label: 'Nostalgic & familiar',
+        tags: ['nostalgia'],
+        mood_weight: null,
+        tone_value: 'nostalgic',
+      },
+    ],
+  },
+
+  // ── 4. Play style ──────────────────────────────────────────────────────────
+  {
+    id: 'play_style',
+    question: 'How will you approach this game?',
+    type: 'single',
+    required: false,
+    answers: [
+      {
+        id: 'main_story',
+        icon: 'FaRoute',
+        label: 'Follow the main story',
+        tags: ['story'],
+        mood_weight: null,
+        style_value: 'main_story',
+      },
+      {
+        id: 'completionist',
+        icon: 'FaCheckDouble',
+        label: '100% everything',
+        tags: ['challenge', 'mastery'],
+        mood_weight: null,
+        style_value: 'completionist',
+      },
+      {
+        id: 'explorer',
+        icon: 'FaMap',
+        label: 'Explore every corner',
+        tags: ['adventure'],
+        mood_weight: null,
+        style_value: 'explorer',
+      },
+      {
+        id: 'speedrun',
+        icon: 'FaStopwatch',
+        label: 'Speedrun / play efficiently',
+        tags: ['challenge'],
+        mood_weight: null,
+        style_value: 'speedrun',
+      },
+      {
+        id: 'sandbox',
+        icon: 'FaCubes',
+        label: 'Freeform sandbox play',
+        tags: ['creative'],
+        mood_weight: null,
+        style_value: 'sandbox',
+      },
+      {
+        id: 'multiplayer',
+        icon: 'FaUserFriends',
+        label: 'Focus on multiplayer',
+        tags: ['social', 'competition'],
+        mood_weight: null,
+        style_value: 'multiplayer',
+      },
+      {
+        id: 'just_vibing',
+        icon: 'FaMusic',
+        label: 'No plan — just vibing',
+        tags: ['destress'],
+        mood_weight: null,
+        style_value: 'just_vibing',
+      },
+    ],
+  },
+
+  // ── 5. Session length ──────────────────────────────────────────────────────
   {
     id: 'session_length',
     question: 'How long are your typical play sessions?',
@@ -96,7 +322,7 @@ export const VIBE_QUESTIONS = [
     answers: [
       {
         id: 'short',
-        emoji: '⚡',
+        icon: 'FaBolt',
         label: 'Quick bursts (under 1 hr)',
         tags: [],
         mood_weight: null,
@@ -104,7 +330,7 @@ export const VIBE_QUESTIONS = [
       },
       {
         id: 'medium',
-        emoji: '🕐',
+        icon: 'FaClock',
         label: 'A couple of hours',
         tags: [],
         mood_weight: null,
@@ -112,7 +338,7 @@ export const VIBE_QUESTIONS = [
       },
       {
         id: 'long',
-        emoji: '🌙',
+        icon: 'FaMoon',
         label: 'Long evening (3–5 hrs)',
         tags: [],
         mood_weight: null,
@@ -120,7 +346,7 @@ export const VIBE_QUESTIONS = [
       },
       {
         id: 'marathon',
-        emoji: '🏕️',
+        icon: 'FaCampground',
         label: 'All-day marathon',
         tags: ['destress'],
         mood_weight: null,
@@ -129,147 +355,7 @@ export const VIBE_QUESTIONS = [
     ],
   },
 
-  // ── 3. Headspace ─────────────────────────────────────────────────────────────
-  {
-    id: 'headspace',
-    question: "What's your headspace right now?",
-    type: 'single',
-    required: false,
-    answers: [
-      {
-        id: 'focused',
-        emoji: '🎯',
-        label: 'Laser focused',
-        tags: ['challenge'],
-        mood_weight: 'challenge',
-        session_hint: null,
-      },
-      {
-        id: 'chill',
-        emoji: '🛋️',
-        label: 'Total chill mode',
-        tags: ['destress'],
-        mood_weight: 'destress',
-        session_hint: null,
-      },
-      {
-        id: 'curious',
-        emoji: '🔍',
-        label: 'Curious & exploratory',
-        tags: ['adventure'],
-        mood_weight: 'adventure',
-        session_hint: null,
-      },
-      {
-        id: 'social_energy',
-        emoji: '💬',
-        label: 'Social & chatty',
-        tags: ['social'],
-        mood_weight: 'social',
-        session_hint: null,
-      },
-      {
-        id: 'nostalgic',
-        emoji: '💭',
-        label: 'Feeling nostalgic',
-        tags: ['nostalgia'],
-        mood_weight: 'nostalgia',
-        session_hint: null,
-      },
-      {
-        id: 'creative_mood',
-        emoji: '✏️',
-        label: 'In a creative mood',
-        tags: ['creative'],
-        mood_weight: 'creative',
-        session_hint: null,
-      },
-      {
-        id: 'narrative_hunger',
-        emoji: '🎬',
-        label: 'Craving a good story',
-        tags: ['story'],
-        mood_weight: 'story',
-        session_hint: null,
-      },
-      {
-        id: 'competitive_edge',
-        emoji: '🔥',
-        label: 'Feeling competitive',
-        tags: ['competition'],
-        mood_weight: 'competition',
-        session_hint: null,
-      },
-    ],
-  },
-
-  // ── 4. Completion goal ───────────────────────────────────────────────────────
-  {
-    id: 'completion_goal',
-    question: 'How do you plan to approach this game?',
-    type: 'single',
-    required: false,
-    answers: [
-      {
-        id: 'main_story',
-        emoji: '🎬',
-        label: 'Just the main story',
-        tags: ['story'],
-        mood_weight: 'story',
-        session_hint: null,
-      },
-      {
-        id: 'completionist',
-        emoji: '💯',
-        label: '100% everything',
-        tags: ['challenge'],
-        mood_weight: 'challenge',
-        session_hint: null,
-      },
-      {
-        id: 'chill_play',
-        emoji: '🌿',
-        label: 'No goals — just vibe',
-        tags: ['destress'],
-        mood_weight: 'destress',
-        session_hint: null,
-      },
-      {
-        id: 'explore_all',
-        emoji: '🌍',
-        label: 'Explore every corner',
-        tags: ['adventure'],
-        mood_weight: 'adventure',
-        session_hint: null,
-      },
-      {
-        id: 'speedrun',
-        emoji: '⏱️',
-        label: 'Speedrun it',
-        tags: ['challenge', 'competition'],
-        mood_weight: 'challenge',
-        session_hint: null,
-      },
-      {
-        id: 'multiplayer_focus',
-        emoji: '🤝',
-        label: 'Mainly the multiplayer',
-        tags: ['social', 'competition'],
-        mood_weight: 'social',
-        session_hint: null,
-      },
-      {
-        id: 'sandbox_free',
-        emoji: '🏗️',
-        label: 'Freeform sandbox play',
-        tags: ['creative'],
-        mood_weight: 'creative',
-        session_hint: null,
-      },
-    ],
-  },
-
-  // ── 5. Why now? ──────────────────────────────────────────────────────────────
+  // ── 6. Why now? ────────────────────────────────────────────────────────────
   {
     id: 'why_now',
     question: 'Why are you adding this game now?',
@@ -278,7 +364,7 @@ export const VIBE_QUESTIONS = [
     answers: [
       {
         id: 'hype',
-        emoji: '🚀',
+        icon: 'FaRocket',
         label: 'Just came out or big hype',
         tags: [],
         mood_weight: null,
@@ -286,7 +372,7 @@ export const VIBE_QUESTIONS = [
       },
       {
         id: 'friend_rec',
-        emoji: '🤝',
+        icon: 'FaHandshake',
         label: 'Friend recommended it',
         tags: ['social'],
         mood_weight: null,
@@ -294,7 +380,7 @@ export const VIBE_QUESTIONS = [
       },
       {
         id: 'backlog_clear',
-        emoji: '📋',
+        icon: 'FaClipboardList',
         label: 'Clearing the backlog',
         tags: [],
         mood_weight: null,
@@ -302,7 +388,7 @@ export const VIBE_QUESTIONS = [
       },
       {
         id: 'revisit',
-        emoji: '🔄',
+        icon: 'FaSyncAlt',
         label: "Replaying an old favourite",
         tags: ['nostalgia'],
         mood_weight: 'nostalgia',
@@ -310,7 +396,7 @@ export const VIBE_QUESTIONS = [
       },
       {
         id: 'genre_itch',
-        emoji: '🎮',
+        icon: 'FaGamepad',
         label: 'Scratching a genre itch',
         tags: [],
         mood_weight: null,
@@ -318,7 +404,7 @@ export const VIBE_QUESTIONS = [
       },
       {
         id: 'on_sale',
-        emoji: '💸',
+        icon: 'FaTag',
         label: 'On sale / in a bundle',
         tags: [],
         mood_weight: null,
@@ -326,7 +412,7 @@ export const VIBE_QUESTIONS = [
       },
       {
         id: 'deep_lore',
-        emoji: '📜',
+        icon: 'FaScroll',
         label: 'Heard the lore is incredible',
         tags: ['story'],
         mood_weight: 'story',
@@ -334,7 +420,7 @@ export const VIBE_QUESTIONS = [
       },
       {
         id: 'challenge_rep',
-        emoji: '⚔️',
+        icon: 'FaFistRaised',
         label: 'Heard it is brutally hard',
         tags: ['challenge'],
         mood_weight: 'challenge',
@@ -352,16 +438,22 @@ const _questionMap = Object.fromEntries(VIBE_QUESTIONS.map((q) => [q.id, q]));
  * Given a structured answers array of the form:
  *   [{ question_id: string, answer_id: string }, ...]
  *
- * Return a vibe profile object matching the shape produced by analyzeVibeInterview:
- *   { tags, mood_match, expected_session_length, raw_interview_answers }
+ * Return a vibe profile object:
+ *   { tags, mood_match, expected_session_length, play_motivation,
+ *     energy_level, emotional_tone_pref, play_style, raw_interview_answers }
  *
- * Mood is elected by weighted vote.  The primary 'mood' question answer
- * carries PRIMARY_MOOD_WEIGHT votes; all other questions carry 1 vote each.
+ * Mood is elected by weighted vote.  The primary 'play_motivation' question
+ * answer carries PRIMARY_MOOD_WEIGHT votes; all other questions carry 1 vote
+ * each.
  */
 export function analyzeVibeAnswers(structuredAnswers) {
   const allTags = [];
   const moodVotes = {};
-  let sessionLength = 'medium'; // default when no session_length question answered
+  let sessionLength = 'medium';
+  let playMotivation = null;
+  let energyLevel = null;
+  let emotionalTonePref = null;
+  let playStyle = null;
 
   for (const { question_id, answer_id } of structuredAnswers) {
     const question = _questionMap[question_id];
@@ -375,13 +467,27 @@ export function analyzeVibeAnswers(structuredAnswers) {
 
     // Vote for dominant mood
     if (answer.mood_weight) {
-      const weight = question_id === 'mood' ? PRIMARY_MOOD_WEIGHT : 1;
+      const weight = question_id === 'play_motivation' ? PRIMARY_MOOD_WEIGHT : 1;
       moodVotes[answer.mood_weight] = (moodVotes[answer.mood_weight] ?? 0) + weight;
     }
 
-    // Session length: the dedicated session_length question answer wins outright
+    // Session length
     if (answer.session_hint) {
       sessionLength = answer.session_hint;
+    }
+
+    // New dimension extractors
+    if (answer.motivation_value) {
+      playMotivation = answer.motivation_value;
+    }
+    if (answer.energy_hint) {
+      energyLevel = answer.energy_hint;
+    }
+    if (answer.tone_value) {
+      emotionalTonePref = answer.tone_value;
+    }
+    if (answer.style_value) {
+      playStyle = answer.style_value;
     }
   }
 
@@ -392,6 +498,10 @@ export function analyzeVibeAnswers(structuredAnswers) {
     tags: [...new Set(allTags)],
     mood_match: dominantMood,
     expected_session_length: sessionLength,
+    play_motivation: playMotivation,
+    energy_level: energyLevel,
+    emotional_tone_pref: emotionalTonePref,
+    play_style: playStyle,
     raw_interview_answers: structuredAnswers,
   };
 }

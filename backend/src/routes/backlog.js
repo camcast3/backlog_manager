@@ -164,13 +164,17 @@ export default async function backlogRoutes(fastify) {
         ? analyzeVibeAnswers(vibe_answers)
         : analyzeVibeInterview(why_i_want_to_play, interview_answers ?? {});
       await sql`
-        INSERT INTO vibe_profiles (backlog_item_id, tags, mood_match, expected_session_length, raw_interview_answers)
+        INSERT INTO vibe_profiles (backlog_item_id, tags, mood_match, expected_session_length, raw_interview_answers, play_motivation, emotional_tone_pref, play_style, energy_level)
         VALUES (
           ${backlogItem.id},
           ${sql.array(vibe.tags)},
           ${vibe.mood_match},
           ${vibe.expected_session_length},
-          ${sql.json(vibe.raw_interview_answers)}
+          ${sql.json(vibe.raw_interview_answers)},
+          ${vibe.play_motivation ?? null},
+          ${vibe.emotional_tone_pref ?? null},
+          ${vibe.play_style ?? null},
+          ${vibe.energy_level ?? null}
         )
       `;
     }
@@ -262,6 +266,55 @@ export default async function backlogRoutes(fastify) {
       gamification: {
         ...xpResult,
         newAchievements: achievement ? [achievement, ...xpResult.newAchievements] : xpResult.newAchievements,
+      },
+    };
+  });
+
+  // GET /backlog/vibe-portfolio - aggregated "Gamer DNA" data
+  fastify.get('/vibe-portfolio', async () => {
+    const profiles = await sql`
+      SELECT vp.*, bi.status, g.title, g.genre, g.vibe_intensity, g.emotional_tone
+      FROM vibe_profiles vp
+      JOIN backlog_items bi ON bi.id = vp.backlog_item_id
+      JOIN games g ON g.id = bi.game_id
+    `;
+
+    const motivationCounts = {};
+    const toneCounts = {};
+    const styleCounts = {};
+    const energyCounts = {};
+    const moodCounts = {};
+
+    for (const p of profiles) {
+      if (p.play_motivation) motivationCounts[p.play_motivation] = (motivationCounts[p.play_motivation] || 0) + 1;
+      if (p.emotional_tone_pref) toneCounts[p.emotional_tone_pref] = (toneCounts[p.emotional_tone_pref] || 0) + 1;
+      if (p.play_style) styleCounts[p.play_style] = (styleCounts[p.play_style] || 0) + 1;
+      if (p.energy_level) energyCounts[p.energy_level] = (energyCounts[p.energy_level] || 0) + 1;
+      if (p.mood_match) moodCounts[p.mood_match] = (moodCounts[p.mood_match] || 0) + 1;
+      if (p.tags) {
+        for (const tag of (Array.isArray(p.tags) ? p.tags : [])) {
+          moodCounts[tag] = (moodCounts[tag] || 0) + 1;
+        }
+      }
+    }
+
+    const topMotivation = Object.entries(motivationCounts).sort(([,a],[,b]) => b - a)[0];
+    const topTone = Object.entries(toneCounts).sort(([,a],[,b]) => b - a)[0];
+    const topStyle = Object.entries(styleCounts).sort(([,a],[,b]) => b - a)[0];
+    const topEnergy = Object.entries(energyCounts).sort(([,a],[,b]) => b - a)[0];
+
+    return {
+      total_profiled: profiles.length,
+      motivations: motivationCounts,
+      emotional_tones: toneCounts,
+      play_styles: styleCounts,
+      energy_levels: energyCounts,
+      mood_tags: moodCounts,
+      dominant: {
+        motivation: topMotivation?.[0] || null,
+        tone: topTone?.[0] || null,
+        style: topStyle?.[0] || null,
+        energy: topEnergy?.[0] || null,
       },
     };
   });

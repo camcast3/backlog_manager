@@ -15,6 +15,7 @@ const migrations = [
   '004_add_users.sql',
   '005_play_sessions.sql',
   '006_session_achievements.sql',
+  '007_vibe_portfolio.sql',
 ];
 
 async function migrate() {

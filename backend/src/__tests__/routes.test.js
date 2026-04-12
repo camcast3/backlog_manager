@@ -341,12 +341,12 @@ describe('GET /api/progress/activity', () => {
 
 // ── Vibe questions route ──────────────────────────────────────────────────────
 describe('GET /api/vibe-questions', () => {
-  test('returns 200 with all 5 questions', async () => {
+  test('returns 200 with all 6 questions', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/vibe-questions' });
     expect(res.statusCode).toBe(200);
     const body = res.json();
     expect(Array.isArray(body)).toBe(true);
-    expect(body).toHaveLength(5);
+    expect(body).toHaveLength(6);
   });
 
   test('each question has id, question text, type, and answers array', async () => {
@@ -359,23 +359,23 @@ describe('GET /api/vibe-questions', () => {
     }
   });
 
-  test('mood question contains all 8 mood answer options', async () => {
+  test('play_motivation question contains all 10 motivation answer options', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/vibe-questions' });
-    const moodQ = res.json().find((q) => q.id === 'mood');
-    expect(moodQ).toBeDefined();
-    expect(moodQ.answers).toHaveLength(8);
-    const ids = moodQ.answers.map((a) => a.id);
-    for (const mood of ['destress', 'challenge', 'story', 'nostalgia', 'adventure', 'competition', 'social', 'creative']) {
-      expect(ids).toContain(mood);
+    const motivationQ = res.json().find((q) => q.id === 'play_motivation');
+    expect(motivationQ).toBeDefined();
+    expect(motivationQ.answers).toHaveLength(10);
+    const ids = motivationQ.answers.map((a) => a.id);
+    for (const id of ['escapism', 'challenge', 'story', 'mastery', 'relaxation', 'social', 'exploration', 'creative', 'nostalgia', 'hype']) {
+      expect(ids).toContain(id);
     }
   });
 
-  test('every answer has emoji and label fields for UI rendering', async () => {
+  test('every answer has icon and label fields for UI rendering', async () => {
     const res = await app.inject({ method: 'GET', url: '/api/vibe-questions' });
     for (const question of res.json()) {
       for (const answer of question.answers) {
-        expect(typeof answer.emoji).toBe('string');
-        expect(answer.emoji.length).toBeGreaterThan(0);
+        expect(typeof answer.icon).toBe('string');
+        expect(answer.icon.length).toBeGreaterThan(0);
         expect(typeof answer.label).toBe('string');
         expect(answer.label.length).toBeGreaterThan(0);
       }
