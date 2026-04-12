@@ -10,22 +10,45 @@ export default function GameLibraryPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterVibe, setFilterVibe] = useState('');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   useEffect(() => {
-    loadGames();
+    setPage(1);
+    loadGames(1);
   }, [filterVibe]);
 
-  async function loadGames() {
+  async function loadGames(requestedPage = 1) {
     setLoading(true);
     try {
-      const params = {};
+      const params = { page: requestedPage };
       if (filterVibe) params.vibe_intensity = filterVibe;
       const data = await gamesApi.list(params);
-      setGames(data);
+      setGames(data.items);
+      setHasMore(data.hasMore);
+      setPage(requestedPage);
     } catch (err) {
       toast(err.message, 'warning');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadMoreGames() {
+    const nextPage = page + 1;
+    setLoadingMore(true);
+    try {
+      const params = { page: nextPage };
+      if (filterVibe) params.vibe_intensity = filterVibe;
+      const data = await gamesApi.list(params);
+      setGames(prev => [...prev, ...data.items]);
+      setHasMore(data.hasMore);
+      setPage(nextPage);
+    } catch (err) {
+      toast(err.message, 'warning');
+    } finally {
+      setLoadingMore(false);
     }
   }
 
@@ -101,6 +124,14 @@ export default function GameLibraryPage() {
           </div>
         ))}
       </div>
+
+      {!loading && hasMore && (
+        <div className="load-more-container">
+          <button className="load-more-btn" onClick={loadMoreGames} disabled={loadingMore}>
+            {loadingMore ? 'Loading…' : 'Load More'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

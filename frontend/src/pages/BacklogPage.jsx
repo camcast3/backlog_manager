@@ -67,6 +67,9 @@ export default function BacklogPage() {
   const [showPicker, setShowPicker] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [filters, setFilters] = useState({ status: 'want_to_play', sort: 'priority', platform: '', genre: '', vibe_intensity: '' });
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -105,21 +108,42 @@ export default function BacklogPage() {
   }
 
   useEffect(() => {
-    loadItems();
+    setPage(1);
+    loadItems(1);
   }, [filters]);
 
-  async function loadItems() {
+  async function loadItems(requestedPage = 1) {
     setLoading(true);
     try {
-      const params = {};
+      const params = { page: requestedPage };
       if (filters.status) params.status = filters.status;
       if (filters.sort) params.sort = filters.sort;
       const data = await backlogApi.list(params);
-      setItems(data);
+      setItems(data.items);
+      setHasMore(data.hasMore);
+      setPage(requestedPage);
     } catch (err) {
       toast(err.message, 'warning');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadMore() {
+    const nextPage = page + 1;
+    setLoadingMore(true);
+    try {
+      const params = { page: nextPage };
+      if (filters.status) params.status = filters.status;
+      if (filters.sort) params.sort = filters.sort;
+      const data = await backlogApi.list(params);
+      setItems(prev => [...prev, ...data.items]);
+      setHasMore(data.hasMore);
+      setPage(nextPage);
+    } catch (err) {
+      toast(err.message, 'warning');
+    } finally {
+      setLoadingMore(false);
     }
   }
 
@@ -412,6 +436,14 @@ export default function BacklogPage() {
           {renderCardContent(item)}
         </div>
       ))}
+
+      {!loading && hasMore && (
+        <div className="load-more-container">
+          <button className="load-more-btn" onClick={loadMore} disabled={loadingMore}>
+            {loadingMore ? 'Loading…' : 'Load More'}
+          </button>
+        </div>
+      )}
 
       {showAddModal && (
         <AddGameModal onClose={() => setShowAddModal(false)} onAdded={() => loadItems()} />

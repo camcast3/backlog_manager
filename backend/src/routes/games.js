@@ -12,21 +12,29 @@ function withHltbStale(gameOrGames) {
 export default async function gamesRoutes(fastify) {
   const sql = getDb();
 
-  // GET /games - list all games with optional filters
+  // GET /games - list games with optional filters and pagination
   fastify.get('/', async (req, reply) => {
     const { platform, genre, vibe_intensity, search } = req.query;
-    let query = sql`
-      SELECT * FROM games
-      WHERE 1=1
-    `;
-    if (platform) query = sql`${query} AND platform ILIKE ${'%' + platform + '%'}`;
-    if (genre) query = sql`${query} AND genre ILIKE ${'%' + genre + '%'}`;
-    if (vibe_intensity) query = sql`${query} AND vibe_intensity = ${vibe_intensity}`;
-    if (search) query = sql`${query} AND title ILIKE ${'%' + search + '%'}`;
-    query = sql`${query} ORDER BY title ASC`;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const offset = (page - 1) * limit;
 
-    const games = await query;
-    return withHltbStale(games);
+    let conditions = sql`WHERE 1=1`;
+    if (platform) conditions = sql`${conditions} AND platform ILIKE ${'%' + platform + '%'}`;
+    if (genre) conditions = sql`${conditions} AND genre ILIKE ${'%' + genre + '%'}`;
+    if (vibe_intensity) conditions = sql`${conditions} AND vibe_intensity = ${vibe_intensity}`;
+    if (search) conditions = sql`${conditions} AND title ILIKE ${'%' + search + '%'}`;
+
+    const [{ count: total }] = await sql`
+      SELECT COUNT(*)::int AS count FROM games ${conditions}
+    `;
+
+    const games = await sql`
+      SELECT * FROM games ${conditions}
+      ORDER BY title ASC
+      LIMIT ${limit} OFFSET ${offset}
+    `;
+    return { items: withHltbStale(games), total, page, limit, hasMore: offset + games.length < total };
   });
 
   // GET /games/:id

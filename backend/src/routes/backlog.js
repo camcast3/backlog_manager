@@ -35,9 +35,12 @@ export default async function backlogRoutes(fastify) {
     return item;
   }
 
-  // GET /backlog - list all backlog items
+  // GET /backlog - list backlog items with pagination
   fastify.get('/', async (req) => {
     const { status, platform, vibe_intensity, sort } = req.query;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
+    const offset = (page - 1) * limit;
 
     const sortOptions = {
       priority: sql`bi.priority DESC`,
@@ -51,6 +54,13 @@ export default async function backlogRoutes(fastify) {
     if (status) conditions = sql`${conditions} AND bi.status = ${status}`;
     if (platform) conditions = sql`${conditions} AND g.platform ILIKE ${'%' + platform + '%'}`;
     if (vibe_intensity) conditions = sql`${conditions} AND g.vibe_intensity = ${vibe_intensity}`;
+
+    const [{ count: total }] = await sql`
+      SELECT COUNT(*)::int AS count
+      FROM backlog_items bi
+      JOIN games g ON bi.game_id = g.id
+      ${conditions}
+    `;
 
     const items = await sql`
       SELECT
@@ -75,8 +85,9 @@ export default async function backlogRoutes(fastify) {
       LEFT JOIN vibe_profiles vp ON vp.backlog_item_id = bi.id
       ${conditions}
       ORDER BY ${orderBy}
+      LIMIT ${limit} OFFSET ${offset}
     `;
-    return items;
+    return { items, total, page, limit, hasMore: offset + items.length < total };
   });
 
   // GET /backlog/stats - summary statistics
