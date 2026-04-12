@@ -25,7 +25,7 @@ export default function Dashboard() {
     loadAll();
   }, []);
 
-  function withTimeout(promise, ms = 10000) {
+  function withTimeout(promise, ms = 5000) {
     return Promise.race([
       promise,
       new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
@@ -41,27 +41,21 @@ export default function Dashboard() {
         withTimeout(progressApi.activity()),
         withTimeout(backlogApi.staleness()),
         withTimeout(backlogApi.list({ status: 'playing' })),
+        withTimeout(backlogApi.focus()),
+        withTimeout(analyticsApi.backlogHealth()),
+        withTimeout(backlogApi.list({ status: 'want_to_play' })),
       ]);
-      const [s, p, activity, stale, items] = results.map(r => r.status === 'fulfilled' ? r.value : null);
-      if (s) setStats(s);
-      if (p) setProgress(p);
-      if (activity) setRecentActivity(activity);
-      if (stale) setStaleItems(stale);
+      const val = (i) => results[i].status === 'fulfilled' ? results[i].value : null;
+      if (val(0)) setStats(val(0));
+      if (val(1)) setProgress(val(1));
+      if (val(2)) setRecentActivity(val(2));
+      if (val(3)) setStaleItems(val(3));
+      const items = val(4);
       if (items) setPlayingNow(items);
-
-      // Fetch focus games and insights in parallel
-      const [focus, health] = await Promise.all([
-        backlogApi.focus().catch(() => []),
-        analyticsApi.backlogHealth().catch(() => null),
-      ]);
-      setFocusGames(focus);
-      setInsights(health);
-
-      // Also fetch want_to_play for the game picker
-      try {
-        const wtp = await backlogApi.list({ status: 'want_to_play' });
-        setAllItems([...(items || []), ...wtp]);
-      } catch { setAllItems(items || []); }
+      setFocusGames(val(5) || []);
+      setInsights(val(6));
+      const wtp = val(7);
+      setAllItems([...(items || []), ...(wtp || [])]);
     } catch (err) {
       toast(err.message, 'warning');
     } finally {
