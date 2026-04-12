@@ -600,3 +600,170 @@ describe('gameSearchService', () => {
     });
   });
 });
+
+// ── vibeQuestionService ─────────────────────────────────────────────────────
+
+describe('vibeQuestionService.analyzeVibeAnswers', () => {
+  test('returns play_motivation="escapism" when answered with escapism', () => {
+    const result = analyzeVibeAnswers([{ question_id: 'play_motivation', answer_id: 'escapism' }]);
+    expect(result.play_motivation).toBe('escapism');
+  });
+
+  test('returns play_motivation="challenge" when answered with challenge', () => {
+    const result = analyzeVibeAnswers([{ question_id: 'play_motivation', answer_id: 'challenge' }]);
+    expect(result.play_motivation).toBe('challenge');
+  });
+
+  test('returns energy_level from energy_level question', () => {
+    const cozy = analyzeVibeAnswers([{ question_id: 'energy_level', answer_id: 'cozy' }]);
+    expect(cozy.energy_level).toBe('cozy');
+
+    const intense = analyzeVibeAnswers([{ question_id: 'energy_level', answer_id: 'intense' }]);
+    expect(intense.energy_level).toBe('intense');
+  });
+
+  test('returns emotional_tone_pref from emotional_tone question', () => {
+    const hw = analyzeVibeAnswers([{ question_id: 'emotional_tone', answer_id: 'heartwarming' }]);
+    expect(hw.emotional_tone_pref).toBe('heartwarming');
+
+    const dark = analyzeVibeAnswers([{ question_id: 'emotional_tone', answer_id: 'dark' }]);
+    expect(dark.emotional_tone_pref).toBe('dark');
+  });
+
+  test('returns play_style from play_style question', () => {
+    const comp = analyzeVibeAnswers([{ question_id: 'play_style', answer_id: 'completionist' }]);
+    expect(comp.play_style).toBe('completionist');
+
+    const expl = analyzeVibeAnswers([{ question_id: 'play_style', answer_id: 'explorer' }]);
+    expect(expl.play_style).toBe('explorer');
+  });
+
+  test('returns session_length from session_length question', () => {
+    const short = analyzeVibeAnswers([{ question_id: 'session_length', answer_id: 'short' }]);
+    expect(short.expected_session_length).toBe('short');
+
+    const marathon = analyzeVibeAnswers([{ question_id: 'session_length', answer_id: 'marathon' }]);
+    expect(marathon.expected_session_length).toBe('marathon');
+  });
+
+  test('play_motivation gets PRIMARY_MOOD_WEIGHT votes vs 1 for others', () => {
+    // escapism → mood_weight 'destress' with weight 3
+    // challenge_rep → mood_weight 'challenge' with weight 1
+    // destress should win because 3 > 1
+    const result = analyzeVibeAnswers([
+      { question_id: 'play_motivation', answer_id: 'escapism' },
+      { question_id: 'why_now', answer_id: 'challenge_rep' },
+    ]);
+    expect(result.mood_match).toBe('destress');
+  });
+
+  test('tags are de-duplicated', () => {
+    // 'mastery' answer has tags ['challenge','mastery'], 'completionist' has ['challenge','mastery']
+    const result = analyzeVibeAnswers([
+      { question_id: 'play_motivation', answer_id: 'mastery' },
+      { question_id: 'play_style', answer_id: 'completionist' },
+    ]);
+    const challengeCount = result.tags.filter((t) => t === 'challenge').length;
+    const masteryCount = result.tags.filter((t) => t === 'mastery').length;
+    expect(challengeCount).toBe(1);
+    expect(masteryCount).toBe(1);
+  });
+
+  test('unknown question_ids are ignored', () => {
+    const result = analyzeVibeAnswers([{ question_id: 'nonexistent', answer_id: 'escapism' }]);
+    expect(result.play_motivation).toBeNull();
+    expect(result.tags).toEqual([]);
+  });
+
+  test('unknown answer_ids are ignored', () => {
+    const result = analyzeVibeAnswers([{ question_id: 'play_motivation', answer_id: 'nonexistent' }]);
+    expect(result.play_motivation).toBeNull();
+    expect(result.tags).toEqual([]);
+  });
+
+  test('empty array returns nulls and default session_length="medium"', () => {
+    const result = analyzeVibeAnswers([]);
+    expect(result.play_motivation).toBeNull();
+    expect(result.energy_level).toBeNull();
+    expect(result.emotional_tone_pref).toBeNull();
+    expect(result.play_style).toBeNull();
+    expect(result.mood_match).toBeNull();
+    expect(result.expected_session_length).toBe('medium');
+    expect(result.tags).toEqual([]);
+  });
+
+  test('raw_interview_answers is passed through unchanged', () => {
+    const input = [
+      { question_id: 'play_motivation', answer_id: 'escapism' },
+      { question_id: 'energy_level', answer_id: 'cozy' },
+    ];
+    const result = analyzeVibeAnswers(input);
+    expect(result.raw_interview_answers).toBe(input);
+  });
+});
+
+describe('VIBE_QUESTIONS structure', () => {
+  const questionMap = Object.fromEntries(VIBE_QUESTIONS.map((q) => [q.id, q]));
+
+  test('all 6 questions exist', () => {
+    const ids = VIBE_QUESTIONS.map((q) => q.id);
+    expect(ids).toContain('play_motivation');
+    expect(ids).toContain('energy_level');
+    expect(ids).toContain('emotional_tone');
+    expect(ids).toContain('play_style');
+    expect(ids).toContain('session_length');
+    expect(ids).toContain('why_now');
+    expect(VIBE_QUESTIONS.length).toBe(6);
+  });
+
+  test('play_motivation has 10 answers', () => {
+    expect(questionMap.play_motivation.answers.length).toBe(10);
+  });
+
+  test('energy_level has 5 answers', () => {
+    expect(questionMap.energy_level.answers.length).toBe(5);
+  });
+
+  test('emotional_tone has 10 answers', () => {
+    expect(questionMap.emotional_tone.answers.length).toBe(10);
+  });
+
+  test('play_style has 7 answers', () => {
+    expect(questionMap.play_style.answers.length).toBe(7);
+  });
+
+  test('session_length has 4 answers', () => {
+    expect(questionMap.session_length.answers.length).toBe(4);
+  });
+
+  test('why_now has 8 answers', () => {
+    expect(questionMap.why_now.answers.length).toBe(8);
+  });
+
+  test('required questions: play_motivation, energy_level, session_length', () => {
+    expect(questionMap.play_motivation.required).toBe(true);
+    expect(questionMap.energy_level.required).toBe(true);
+    expect(questionMap.session_length.required).toBe(true);
+  });
+
+  test('optional questions: emotional_tone, play_style, why_now', () => {
+    expect(questionMap.emotional_tone.required).toBe(false);
+    expect(questionMap.play_style.required).toBe(false);
+    expect(questionMap.why_now.required).toBe(false);
+  });
+
+  test('every answer has id, icon, label, tags fields', () => {
+    for (const question of VIBE_QUESTIONS) {
+      for (const answer of question.answers) {
+        expect(answer).toHaveProperty('id');
+        expect(answer).toHaveProperty('icon');
+        expect(answer).toHaveProperty('label');
+        expect(answer).toHaveProperty('tags');
+        expect(typeof answer.id).toBe('string');
+        expect(typeof answer.icon).toBe('string');
+        expect(typeof answer.label).toBe('string');
+        expect(Array.isArray(answer.tags)).toBe(true);
+      }
+    }
+  });
+});

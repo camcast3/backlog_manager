@@ -860,4 +860,346 @@ describe('Auth routes', () => {
     expect(body.authenticated).toBe(false);
     expect(body.authEnabled).toBe(false);
   });
+
+  test('GET /auth/login redirects to / when auth is not configured', async () => {
+    const res = await app.inject({ method: 'GET', url: '/auth/login' });
+    expect(res.statusCode).toBe(302);
+    expect(res.headers.location).toBe('/');
+  });
+
+  test('POST /auth/logout responds without hanging when session unavailable', async () => {
+    const res = await app.inject({ method: 'POST', url: '/auth/logout' });
+    // Session plugin is not registered when auth is disabled, so
+    // request.session is undefined and the handler throws → 500.
+    expect(res.statusCode).toBe(500);
+  });
+});
+
+// ── GET /api/backlog – list with filters & pagination ─────────────────────────
+describe('GET /api/backlog', () => {
+  // The list handler eagerly evaluates 4 sort-option sql`` fragments, an
+  // optional fallback sort (when no ?sort param), a WHERE base, plus one per
+  // active filter — all before the two real queries (COUNT + SELECT items).
+  function pushListPreamble({ filters = 0, hasSortParam = false } = {}) {
+    const pads = 4 + (hasSortParam ? 0 : 1) + 1 + filters;
+    for (let i = 0; i < pads; i++) queryQueue.push([]);
+  }
+
+  test('returns items, total, page, limit, hasMore for a basic list', async () => {
+    pushListPreamble();
+    queryQueue.push([{ count: 2 }]);
+    queryQueue.push([
+      { id: 1, game_title: 'Hades', platform: 'PC', status: 'playing' },
+      { id: 2, game_title: 'Celeste', platform: 'Switch', status: 'want_to_play' },
+    ]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.items).toHaveLength(2);
+    expect(body.total).toBe(2);
+    expect(body.page).toBe(1);
+    expect(body.limit).toBe(20);
+    expect(body.hasMore).toBe(false);
+  });
+
+  test('filters by status', async () => {
+    pushListPreamble({ filters: 1 });
+    queryQueue.push([{ count: 1 }]);
+    queryQueue.push([{ id: 1, game_title: 'Hades', status: 'playing' }]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog?status=playing' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.items).toHaveLength(1);
+    expect(body.total).toBe(1);
+  });
+
+  test('filters by platform', async () => {
+    pushListPreamble({ filters: 1 });
+    queryQueue.push([{ count: 1 }]);
+    queryQueue.push([{ id: 2, game_title: 'Zelda', platform: 'Switch' }]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog?platform=Switch' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().items).toHaveLength(1);
+  });
+
+  test('pagination returns correct page and hasMore=true', async () => {
+    pushListPreamble();
+    queryQueue.push([{ count: 5 }]);
+    queryQueue.push([
+      { id: 3, game_title: 'Game C' },
+      { id: 4, game_title: 'Game D' },
+    ]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog?page=2&limit=2' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.page).toBe(2);
+    expect(body.limit).toBe(2);
+    expect(body.hasMore).toBe(true);
+    expect(body.items).toHaveLength(2);
+  });
+
+  test('hasMore is false when all items fit in one page', async () => {
+    pushListPreamble();
+    queryQueue.push([{ count: 2 }]);
+    queryQueue.push([
+      { id: 1, game_title: 'A' },
+      { id: 2, game_title: 'B' },
+    ]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog?page=1&limit=20' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().hasMore).toBe(false);
+  });
+});
+
+// ── GET /api/backlog/focus ────────────────────────────────────────────────────
+describe('GET /api/backlog/focus', () => {
+  test('returns top focus games', async () => {
+    queryQueue.push([
+      { id: 1, game_title: 'Hades', status: 'playing', priority: 90 },
+      { id: 2, game_title: 'Celeste', status: 'want_to_play', priority: 80 },
+    ]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog/focus' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body).toHaveLength(2);
+    expect(body[0].game_title).toBe('Hades');
+  });
+
+  test('returns empty array when no focus games', async () => {
+    queryQueue.push([]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog/focus' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual([]);
+  });
+});
+
+// ── GET /api/backlog/vibe-portfolio ───────────────────────────────────────────
+describe('GET /api/backlog/vibe-portfolio', () => {
+  test('returns aggregated vibe data', async () => {
+    queryQueue.push([
+      { play_motivation: 'escapism', emotional_tone_pref: 'dark', play_style: 'explorer', energy_level: 'steady', mood_match: 'adventure', tags: ['adventure', 'story'] },
+      { play_motivation: 'escapism', emotional_tone_pref: 'epic', play_style: 'explorer', energy_level: 'intense', mood_match: 'challenge', tags: ['challenge'] },
+      { play_motivation: 'challenge', emotional_tone_pref: 'dark', play_style: 'completionist', energy_level: 'steady', mood_match: 'challenge', tags: [] },
+    ]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog/vibe-portfolio' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.total_profiled).toBe(3);
+    expect(body.motivations).toEqual({ escapism: 2, challenge: 1 });
+    expect(body.emotional_tones).toEqual({ dark: 2, epic: 1 });
+    expect(body.play_styles).toEqual({ explorer: 2, completionist: 1 });
+    expect(body.energy_levels).toEqual({ steady: 2, intense: 1 });
+  });
+
+  test('returns empty data when no profiles exist', async () => {
+    queryQueue.push([]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog/vibe-portfolio' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.total_profiled).toBe(0);
+    expect(body.motivations).toEqual({});
+    expect(body.dominant.motivation).toBeNull();
+    expect(body.dominant.tone).toBeNull();
+  });
+
+  test('dominant values reflect highest counts', async () => {
+    queryQueue.push([
+      { play_motivation: 'story', emotional_tone_pref: 'epic', play_style: 'main_story', energy_level: 'chill', mood_match: 'story', tags: ['story'] },
+      { play_motivation: 'story', emotional_tone_pref: 'epic', play_style: 'main_story', energy_level: 'chill', mood_match: null, tags: [] },
+    ]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog/vibe-portfolio' });
+    const body = res.json();
+    expect(body.dominant.motivation).toBe('story');
+    expect(body.dominant.tone).toBe('epic');
+    expect(body.dominant.style).toBe('main_story');
+    expect(body.dominant.energy).toBe('chill');
+  });
+});
+
+// ── POST /api/backlog – success paths ─────────────────────────────────────────
+describe('POST /api/backlog (success)', () => {
+  test('returns 201 with item and gamification data', async () => {
+    // 1: SELECT game
+    queryQueue.push([{ id: 1, title: 'Hades', platform: 'PC' }]);
+    // 2: INSERT backlog_item RETURNING *
+    queryQueue.push([{ id: 10, game_id: 1, status: 'want_to_play', priority: 50 }]);
+    // --- onGameAdded ---
+    // 3: UPDATE user_progress games_added++
+    queryQueue.push([]);
+    // 4: awardXp → UPDATE RETURNING xp, level
+    queryQueue.push([{ xp: 20, level: 1 }]);
+    // 5: SELECT games_added
+    queryQueue.push([{ games_added: 2 }]);
+    // 6: SELECT COUNT DISTINCT platform
+    queryQueue.push([{ count: '1' }]);
+    // 7: getBacklogItemFull
+    queryQueue.push([{ id: 10, game_id: 1, game_title: 'Hades', platform: 'PC', status: 'want_to_play' }]);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/backlog',
+      payload: { game_id: 1 },
+    });
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body.item).toBeDefined();
+    expect(body.item.game_title).toBe('Hades');
+    expect(body.gamification).toBeDefined();
+    expect(body.gamification.newXp).toBe(20);
+  });
+
+  test('returns 201 and creates vibe profile from vibe_answers', async () => {
+    // 1: SELECT game
+    queryQueue.push([{ id: 1, title: 'Celeste', platform: 'Switch' }]);
+    // 2: INSERT backlog_item
+    queryQueue.push([{ id: 11, game_id: 1, status: 'want_to_play', priority: 50 }]);
+    // 3: INSERT vibe_profiles
+    queryQueue.push([]);
+    // --- onGameAdded ---
+    // 4: UPDATE games_added
+    queryQueue.push([]);
+    // 5: awardXp → UPDATE RETURNING
+    queryQueue.push([{ xp: 40, level: 1 }]);
+    // 6: SELECT games_added
+    queryQueue.push([{ games_added: 3 }]);
+    // 7: SELECT COUNT DISTINCT platform
+    queryQueue.push([{ count: '2' }]);
+    // 8: getBacklogItemFull
+    queryQueue.push([{
+      id: 11, game_id: 1, game_title: 'Celeste', platform: 'Switch',
+      status: 'want_to_play', vibe_tags: ['challenge'],
+    }]);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/backlog',
+      payload: {
+        game_id: 1,
+        vibe_answers: [
+          { question_id: 'play_motivation', answer_id: 'challenge' },
+          { question_id: 'energy_level', answer_id: 'intense' },
+          { question_id: 'session_length', answer_id: 'medium' },
+        ],
+      },
+    });
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body.item).toBeDefined();
+    expect(body.item.game_title).toBe('Celeste');
+    expect(body.gamification).toBeDefined();
+  });
+});
+
+// ── PATCH /api/backlog/:id – success paths ───────────────────────────────────
+describe('PATCH /api/backlog/:id (success)', () => {
+  test('returns 200 when updating priority only', async () => {
+    // 1: SELECT existing
+    queryQueue.push([{ id: 1, game_id: 1, status: 'want_to_play', date_started: null, date_completed: null }]);
+    // 2: setClauses → sql`priority = 80`
+    queryQueue.push([]);
+    // 3: UPDATE backlog_items SET …
+    queryQueue.push([]);
+    // 4: getBacklogItemFull
+    queryQueue.push([{ id: 1, game_id: 1, game_title: 'Hades', priority: 80, status: 'want_to_play' }]);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/api/backlog/1',
+      payload: { priority: 80 },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.item).toBeDefined();
+    expect(body.item.priority).toBe(80);
+    expect(body.gamification).toBeNull();
+  });
+
+  test('returns 200 with gamification when status changes to playing', async () => {
+    // 1: SELECT existing
+    queryQueue.push([{ id: 1, game_id: 1, status: 'want_to_play', date_started: null, date_completed: null }]);
+    // 2–4: setClauses for status, date_started, last_activity_date
+    queryQueue.push([]);
+    queryQueue.push([]);
+    queryQueue.push([]);
+    // 5–6: setFragment reduce (i=1, i=2)
+    queryQueue.push([]);
+    queryQueue.push([]);
+    // 7: UPDATE backlog_items
+    queryQueue.push([]);
+    // 8: SELECT game (for gamification)
+    queryQueue.push([{ id: 1, title: 'Hades', platform: 'PC' }]);
+    // --- onStatusChanged → awardXp ---
+    // 9: UPDATE user_progress RETURNING
+    queryQueue.push([{ xp: 30, level: 1 }]);
+    // 10: earnAchievement('playing_now') → SELECT achievement (not found)
+    queryQueue.push([]);
+    // 11: getBacklogItemFull
+    queryQueue.push([{ id: 1, game_id: 1, game_title: 'Hades', status: 'playing' }]);
+
+    const res = await app.inject({
+      method: 'PATCH',
+      url: '/api/backlog/1',
+      payload: { status: 'playing' },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.item.status).toBe('playing');
+    expect(body.gamification).toBeDefined();
+    expect(body.gamification.newXp).toBe(30);
+  });
+});
+
+// ── DELETE /api/backlog/:id – success ─────────────────────────────────────────
+describe('DELETE /api/backlog/:id (success)', () => {
+  test('returns 200 with deleted flag on success', async () => {
+    queryQueue.push([{ id: 5 }]);
+    const res = await app.inject({ method: 'DELETE', url: '/api/backlog/5' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ deleted: true, id: 5 });
+  });
+});
+
+// ── GET /api/backlog/staleness ────────────────────────────────────────────────
+describe('GET /api/backlog/staleness', () => {
+  test('returns stale games', async () => {
+    queryQueue.push([
+      { id: 1, game_id: 1, status: 'want_to_play', game_title: 'Old Game', months_inactive: 4, platform: 'PC' },
+    ]);
+    const res = await app.inject({ method: 'GET', url: '/api/backlog/staleness' });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body).toHaveLength(1);
+    expect(body[0].game_title).toBe('Old Game');
+    expect(body[0].months_inactive).toBe(4);
+  });
+});
+
+// ── POST /api/backlog/:id/staleness-response – success ────────────────────────
+describe('POST /api/backlog/:id/staleness-response (success)', () => {
+  test('returns 200 with check and gamification XP', async () => {
+    // 1: SELECT id FROM backlog_items
+    queryQueue.push([{ id: 1 }]);
+    // 2: INSERT staleness_checks RETURNING *
+    queryQueue.push([{ id: 5, backlog_item_id: 1, reason: 'inactive_3_months', user_response: 'still interested' }]);
+    // 3: UPDATE backlog_items last_activity_date
+    queryQueue.push([]);
+    // 4: awardXp(15) → UPDATE RETURNING
+    queryQueue.push([{ xp: 15, level: 1 }]);
+    // 5: earnAchievement('staleness_reply') → SELECT achievement (not found)
+    queryQueue.push([]);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/backlog/1/staleness-response',
+      payload: { response: 'still interested' },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.check).toBeDefined();
+    expect(body.check.user_response).toBe('still interested');
+    expect(body.gamification).toBeDefined();
+    expect(body.gamification.newXp).toBe(15);
+  });
 });
