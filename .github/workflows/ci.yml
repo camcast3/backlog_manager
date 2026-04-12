@@ -118,6 +118,9 @@ jobs:
           npx wait-on http://localhost:3001/health --timeout 30000
           npx wait-on http://localhost:5173 --timeout 30000
 
+      - name: Seed test data
+        run: node --input-type=module -e "import setup from './e2e/global-setup.js'; await setup();"
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
