@@ -7,8 +7,9 @@ import AddGameModal from '../components/AddGameModal';
 import EditGameModal from '../components/EditGameModal';
 import GamePicker from '../components/GamePicker';
 import { useToast } from '../context/ToastContext';
-import { FaPen, FaTimes, FaGripVertical } from 'react-icons/fa';
+import { FaPen, FaTimes, FaGripVertical, FaQuoteLeft } from 'react-icons/fa';
 import SessionLogger from '../components/SessionLogger';
+import CompletionCelebration from '../components/CompletionCelebration';
 import { PLATFORMS, VIBE_INTENSITIES } from '../constants';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
@@ -70,6 +71,8 @@ export default function BacklogPage() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [celebration, setCelebration] = useState(null);
+  const [dropConfirm, setDropConfirm] = useState(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -155,22 +158,54 @@ export default function BacklogPage() {
     return result;
   }, [items, filters.platform, filters.genre, filters.vibe_intensity]);
 
-  async function updateStatus(item, newStatus) {
+  const DROP_MESSAGES = [
+    "Life's too short for games you don't enjoy! 🎯",
+    "Smart move — more time for games you'll love! ✨",
+    "Not every game is for everyone. Onwards! 🚀",
+    "Your backlog just got lighter! 💪",
+    "Knowing when to walk away is a skill! 🧠",
+  ];
+
+  async function updateStatus(item, newStatus, dropReason) {
+    if (newStatus === 'dropped' && !dropConfirm) {
+      setDropConfirm(item);
+      return;
+    }
+
     const previousItems = [...items];
     setItems(prev => prev.map(i =>
       i.id === item.id ? { ...i, status: newStatus } : i
     ));
 
     try {
-      const result = await backlogApi.update(item.id, { status: newStatus });
-      if (result.gamification) {
+      const updateData = { status: newStatus };
+      if (newStatus === 'dropped' && dropReason) {
+        updateData.personal_notes = (item.personal_notes ? item.personal_notes + '\n' : '') + `Drop reason: ${dropReason}`;
+      }
+      const result = await backlogApi.update(item.id, updateData);
+
+      if (newStatus === 'dropped') {
+        const msg = DROP_MESSAGES[Math.floor(Math.random() * DROP_MESSAGES.length)];
+        toast(msg, 'success', 5000);
+      } else if (newStatus === 'completed') {
+        setCelebration({
+          gameTitle: item.game_title,
+          hoursPlayed: item.hours_played || 0,
+          gamification: result.gamification,
+        });
+      }
+
+      if (result.gamification && newStatus !== 'completed') {
         const { newXp, newLevel, leveledUp, newAchievements } = result.gamification;
         toast(`Status → ${newStatus}`, 'success');
         if (leveledUp) toast(`Level Up! You're now Level ${newLevel}!`, 'achievement', 6000);
         for (const a of newAchievements) {
           toast(`${a.icon} Achievement: ${a.title} (+${a.xp_reward} XP)`, 'achievement', 6000);
         }
+      } else if (!result.gamification && newStatus !== 'dropped' && newStatus !== 'completed') {
+        toast(`Status → ${newStatus}`, 'success');
       }
+
       loadItems();
     } catch (err) {
       setItems(previousItems);
@@ -266,9 +301,11 @@ export default function BacklogPage() {
             <div className="grid-2">
               <div>
                 {item.why_i_want_to_play && (
-                  <div style={{ marginBottom: '0.75rem' }}>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>WHY I WANT TO PLAY</div>
-                    <div style={{ fontSize: '0.9rem', fontStyle: 'italic', color: 'var(--accent-light)' }}>"{item.why_i_want_to_play}"</div>
+                  <div className="why-callout">
+                    <div className="why-callout-label">
+                      <FaQuoteLeft /> Remember why you added this?
+                    </div>
+                    <div className="why-callout-text">&ldquo;{item.why_i_want_to_play}&rdquo;</div>
                   </div>
                 )}
                 {item.personal_notes && (
@@ -463,6 +500,59 @@ export default function BacklogPage() {
           onClose={() => setShowPicker(false)}
         />
       )}
+
+      {dropConfirm && (
+        <DropConfirmModal
+          item={dropConfirm}
+          onConfirm={(reason) => {
+            const item = dropConfirm;
+            setDropConfirm(null);
+            updateStatus(item, 'dropped', reason);
+          }}
+          onCancel={() => setDropConfirm(null)}
+        />
+      )}
+
+      {celebration && (
+        <CompletionCelebration
+          gameTitle={celebration.gameTitle}
+          hoursPlayed={celebration.hoursPlayed}
+          gamification={celebration.gamification}
+          onClose={() => setCelebration(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function DropConfirmModal({ item, onConfirm, onCancel }) {
+  const [reason, setReason] = useState('');
+
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 420 }}>
+        <h3 className="modal-title">Drop &ldquo;{item.game_title}&rdquo;?</h3>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+          No shame in dropping a game! Why are you moving on? (optional)
+        </p>
+        <select
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          style={{ marginBottom: '1rem' }}
+        >
+          <option value="">No reason needed</option>
+          <option value="Not my vibe">Not my vibe</option>
+          <option value="Too long">Too long</option>
+          <option value="Got boring">Got boring</option>
+          <option value="Too hard">Too hard</option>
+          <option value="Something better came along">Something better came along</option>
+          <option value="Just not feeling it">Just not feeling it</option>
+        </select>
+        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+          <button className="btn-secondary" onClick={onCancel}>Cancel</button>
+          <button className="btn-primary" onClick={() => onConfirm(reason)}>Drop It</button>
+        </div>
+      </div>
     </div>
   );
 }

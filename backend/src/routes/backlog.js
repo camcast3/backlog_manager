@@ -90,6 +90,20 @@ export default async function backlogRoutes(fastify) {
     return { items, total, page, limit, hasMore: offset + items.length < total };
   });
 
+  // GET /backlog/focus - top 5 focus games (playing or want_to_play)
+  fastify.get('/focus', async () => {
+    const items = await sql`
+      SELECT bi.*, g.title AS game_title, g.platform, g.genre, g.cover_image_url,
+             g.hltb_main_story, g.vibe_intensity
+      FROM backlog_items bi
+      JOIN games g ON bi.game_id = g.id
+      WHERE bi.status IN ('playing', 'want_to_play')
+      ORDER BY bi.priority DESC
+      LIMIT 5
+    `;
+    return items;
+  });
+
   // GET /backlog/stats - summary statistics
   fastify.get('/stats', async () => {
     const [counts] = await sql`

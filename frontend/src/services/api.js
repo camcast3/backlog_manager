@@ -28,6 +28,7 @@ export const gamesApi = {
 export const backlogApi = {
   list: (params = {}) => request('GET', `/backlog?${new URLSearchParams(params)}`),
   stats: () => request('GET', '/backlog/stats'),
+  focus: () => request('GET', '/backlog/focus'),
   staleness: () => request('GET', '/backlog/staleness'),
   get: (id) => request('GET', `/backlog/${id}`),
   add: (data) => request('POST', '/backlog', data),
