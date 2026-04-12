@@ -3,13 +3,9 @@ import { gamesApi, backlogApi, searchApi } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { PLATFORMS, VIBE_INTENSITIES, STORY_PACES } from '../constants';
 import { FaTimes, FaCheck } from 'react-icons/fa';
+import * as FaIcons from 'react-icons/fa';
 import { useFocusTrap } from '../hooks/useFocusTrap';
-
-const VIBE_QUESTIONS = [
-  { key: 'mood', label: 'What mood are you in when you imagine playing this?', placeholder: 'e.g. I want to relax, I\'m craving a challenge, I want a good story...' },
-  { key: 'session', label: 'How long do you picture a typical session being?', placeholder: 'e.g. 30 min lunch breaks, long weekend sessions, quick before bed...' },
-  { key: 'why', label: 'Why did this game catch your eye?', placeholder: 'e.g. friends recommended it, saw gameplay on YouTube, loved a similar game...' },
-];
+import { VIBE_QUESTIONS } from '../vibeQuestions';
 
 export default function AddGameModal({ onClose, onAdded }) {
   const toast = useToast();
@@ -38,8 +34,10 @@ export default function AddGameModal({ onClose, onAdded }) {
     why_i_want_to_play: '',
     priority: 50,
     personal_notes: '',
-    interview_answers: {},
   });
+
+  // Structured vibe answers: { question_id: answer_id }
+  const [vibeSelections, setVibeSelections] = useState({});
 
   function gSet(field, value) {
     setGameData((d) => ({ ...d, [field]: value }));
@@ -47,11 +45,8 @@ export default function AddGameModal({ onClose, onAdded }) {
   function bSet(field, value) {
     setBacklogData((d) => ({ ...d, [field]: value }));
   }
-  function setAnswer(key, value) {
-    setBacklogData((d) => ({
-      ...d,
-      interview_answers: { ...d.interview_answers, [key]: value },
-    }));
+  function selectVibeAnswer(questionId, answerId) {
+    setVibeSelections((prev) => ({ ...prev, [questionId]: answerId }));
   }
 
   // Debounced game search as user types
@@ -116,6 +111,15 @@ export default function AddGameModal({ onClose, onAdded }) {
       toast('Game title is required', 'warning');
       return;
     }
+
+    // Validate required vibe questions
+    const missingRequired = VIBE_QUESTIONS
+      .filter((q) => q.required && !vibeSelections[q.id]);
+    if (missingRequired.length > 0) {
+      toast(`Please answer: ${missingRequired[0].question}`, 'warning');
+      return;
+    }
+
     setLoading(true);
     try {
       // Create or upsert the game record
@@ -128,13 +132,17 @@ export default function AddGameModal({ onClose, onAdded }) {
 
       const game = await gamesApi.create(gPayload);
 
-      // Add to backlog with vibe interview
+      // Add to backlog with structured vibe answers
+      const vibe_answers = Object.entries(vibeSelections)
+        .filter(([, answerId]) => answerId)
+        .map(([question_id, answer_id]) => ({ question_id, answer_id }));
+
       const result = await backlogApi.add({
         game_id: game.id,
         why_i_want_to_play: backlogData.why_i_want_to_play,
         priority: backlogData.priority,
         personal_notes: backlogData.personal_notes,
-        interview_answers: backlogData.interview_answers,
+        vibe_answers,
       });
 
       // Show gamification rewards
@@ -372,24 +380,28 @@ export default function AddGameModal({ onClose, onAdded }) {
               These answers help match games to your current mood later!
             </p>
 
-            <div className="form-group">
-              <label>Why do you want to play this game? (the short version)</label>
-              <textarea
-                value={backlogData.why_i_want_to_play}
-                onChange={(e) => bSet('why_i_want_to_play', e.target.value)}
-                placeholder="e.g. Heard it's an amazing chill experience, perfect for unwinding..."
-              />
-            </div>
-
-            {VIBE_QUESTIONS.map(({ key, label, placeholder }) => (
-              <div key={key} className="form-group">
-                <label>{label}</label>
-                <textarea
-                  value={backlogData.interview_answers[key] ?? ''}
-                  onChange={(e) => setAnswer(key, e.target.value)}
-                  placeholder={placeholder}
-                  style={{ minHeight: 60 }}
-                />
+            {VIBE_QUESTIONS.map((q) => (
+              <div key={q.id} style={{ marginBottom: '1.25rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
+                  {q.question} {q.required && <span style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>*</span>}
+                </label>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {q.answers.map((a) => {
+                    const Icon = FaIcons[a.icon];
+                    const selected = vibeSelections[q.id] === a.id;
+                    return (
+                      <button
+                        key={a.id}
+                        type="button"
+                        onClick={() => selectVibeAnswer(q.id, a.id)}
+                        className={`vibe-choice${selected ? ' vibe-choice-selected' : ''}`}
+                      >
+                        {Icon && <Icon size={14} />}
+                        <span>{a.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             ))}
 

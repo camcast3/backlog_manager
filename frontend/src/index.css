@@ -478,6 +478,34 @@ label {
   color: #fbcfe8;
 }
 
+/* ── Vibe choice buttons (multiple-choice vibe interview) ──── */
+.vibe-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.vibe-choice:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: var(--surface-alt);
+}
+.vibe-choice-selected {
+  border-color: var(--accent);
+  background: rgba(124, 58, 237, 0.2);
+  color: var(--accent-light);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
 /* ============================================================
    Mobile – max 767px
    ============================================================ */
