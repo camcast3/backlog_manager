@@ -484,7 +484,7 @@ describe('gameSearchService', () => {
           expect(first[field] === null || typeof first[field] === 'number').toBe(true);
         }
       }
-    });
+    }, 15000);
 
     test('returns results with image_url for known games', async () => {
       const results = await searchHltb('The Witcher 3');
@@ -494,7 +494,7 @@ describe('gameSearchService', () => {
           expect(first.image_url).toMatch(/^https:\/\//);
         }
       }
-    });
+    }, 15000);
   });
 
   describe('searchCovers', () => {
@@ -564,7 +564,7 @@ describe('gameSearchService', () => {
           expect(typeof r.title).toBe('string');
         }
       }
-    });
+    }, 15000);
 
     test('results have expected shape fields', async () => {
       const results = await searchGames('Dark Souls');
@@ -578,7 +578,7 @@ describe('gameSearchService', () => {
         expect(r).toHaveProperty('developer');
         expect(r).toHaveProperty('source');
       }
-    });
+    }, 15000);
 
     test('IGDB results are primary when available', async () => {
       const results = await searchGames('Elden Ring');
@@ -592,12 +592,12 @@ describe('gameSearchService', () => {
           }
         }
       }
-    });
+    }, 15000);
 
     test('limits results to 15 max', async () => {
       const results = await searchGames('Mario');
       expect(results.length).toBeLessThanOrEqual(15);
-    });
+    }, 15000);
   });
 });
 
