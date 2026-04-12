@@ -168,6 +168,121 @@ export default function BacklogPage() {
     }
   }
 
+  function renderCardContent(item) {
+    return (
+      <>
+        <div
+          style={{ display: 'flex', gap: '1rem', cursor: 'pointer', alignItems: 'flex-start' }}
+          onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
+        >
+          {item.cover_image_url && (
+            <img
+              src={item.cover_image_url}
+              alt={item.game_title}
+              style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
+            />
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 800, fontSize: '1rem' }}>{item.game_title}</span>
+              <StatusBadge status={item.status} />
+              <VibeBadge intensity={item.vibe_intensity} />
+              {item.release_year && (
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{item.release_year}</span>
+              )}
+            </div>
+            <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '0.2rem' }}>
+              {item.platform}
+              {item.genre ? ` · ${item.genre}` : ''}
+              {item.hltb_main_story ? ` · ~${item.hltb_main_story}h` : ''}
+            </div>
+            {item.vibe_tags && item.vibe_tags.length > 0 && (
+              <div style={{ marginTop: '0.3rem' }}>
+                {item.vibe_tags.map((tag) => <span key={tag} className="tag">{tag}</span>)}
+              </div>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+            {(STATUS_TRANSITIONS[item.status] ?? []).map((newStatus) => (
+              <button
+                key={newStatus}
+                className={newStatus === 'completed' ? 'btn-success' : 'btn-secondary'}
+                style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
+                onClick={(e) => { e.stopPropagation(); updateStatus(item, newStatus); }}
+                disabled={false}
+              >
+                {newStatus === 'completed' ? 'Complete' :
+                 newStatus === 'playing' ? 'Start' :
+                 newStatus === 'dropped' ? 'Drop' :
+                 newStatus === 'on_hold' ? 'Pause' :
+                 newStatus === 'want_to_play' ? 'Re-add' : newStatus}
+              </button>
+            ))}
+            <button
+              className="btn-secondary"
+              style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
+              onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
+              aria-label={`Edit ${item.game_title}`}
+            >
+              <FaPen />
+            </button>
+            <button
+              className="btn-danger"
+              style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
+              onClick={(e) => { e.stopPropagation(); deleteItem(item); }}
+              aria-label={`Remove ${item.game_title}`}
+            >
+              <FaTimes />
+            </button>
+          </div>
+        </div>
+
+        {expandedId === item.id && (
+          <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+            <div className="grid-2">
+              <div>
+                {item.why_i_want_to_play && (
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>WHY I WANT TO PLAY</div>
+                    <div style={{ fontSize: '0.9rem', fontStyle: 'italic', color: 'var(--accent-light)' }}>"{item.why_i_want_to_play}"</div>
+                  </div>
+                )}
+                {item.personal_notes && (
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>NOTES</div>
+                    <div style={{ fontSize: '0.9rem' }}>{item.personal_notes}</div>
+                  </div>
+                )}
+                {item.mood_match && (
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Vibe match: </span>
+                    <span className="tag">{item.mood_match}</span>
+                    {item.expected_session_length && <span className="tag">{item.expected_session_length} sessions</span>}
+                  </div>
+                )}
+              </div>
+              <div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem' }}>HOW LONG TO BEAT</div>
+                <HltbInfo
+                  mainStory={item.hltb_main_story}
+                  mainPlusExtras={item.hltb_main_plus_extras}
+                  completionist={item.hltb_completionist}
+                />
+                <div style={{ marginTop: '0.75rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                  {item.vibe_mood && <div>Atmosphere: <span style={{ color: 'var(--text)' }}>{item.vibe_mood}</span></div>}
+                  {item.vibe_story_pace && <div>Story pace: <span style={{ color: 'var(--text)' }}>{item.vibe_story_pace.replace('_', ' ')}</span></div>}
+                  <div>Added: {new Date(item.date_added).toLocaleDateString()}</div>
+                  <div>Priority: {item.priority}/100</div>
+                </div>
+              </div>
+            </div>
+            <SessionLogger backlogItemId={item.id} currentRating={item.rating} onUpdate={() => loadItems()} />
+          </div>
+        )}
+      </>
+    );
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -280,116 +395,21 @@ export default function BacklogPage() {
         </div>
       )}
 
-      {!loading && filteredItems.map((item) => (
-        <div key={item.id} className="card" style={{ marginBottom: '0.75rem' }}>
-          <div
-            style={{ display: 'flex', gap: '1rem', cursor: 'pointer', alignItems: 'flex-start' }}
-            onClick={() => setExpandedId(expandedId === item.id ? null : item.id)}
-          >
-            {item.cover_image_url && (
-              <img
-                src={item.cover_image_url}
-                alt={item.game_title}
-                style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }}
-              />
-            )}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: 800, fontSize: '1rem' }}>{item.game_title}</span>
-                <StatusBadge status={item.status} />
-                <VibeBadge intensity={item.vibe_intensity} />
-                {item.release_year && (
-                  <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{item.release_year}</span>
-                )}
-              </div>
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.82rem', marginTop: '0.2rem' }}>
-                {item.platform}
-                {item.genre ? ` · ${item.genre}` : ''}
-                {item.hltb_main_story ? ` · ~${item.hltb_main_story}h` : ''}
-              </div>
-              {item.vibe_tags && item.vibe_tags.length > 0 && (
-                <div style={{ marginTop: '0.3rem' }}>
-                  {item.vibe_tags.map((tag) => <span key={tag} className="tag">{tag}</span>)}
-                </div>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-              {(STATUS_TRANSITIONS[item.status] ?? []).map((newStatus) => (
-                <button
-                  key={newStatus}
-                  className={newStatus === 'completed' ? 'btn-success' : 'btn-secondary'}
-                  style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
-                  onClick={(e) => { e.stopPropagation(); updateStatus(item, newStatus); }}
-                >
-                  {newStatus === 'completed' ? 'Complete' :
-                   newStatus === 'playing' ? 'Start' :
-                   newStatus === 'dropped' ? 'Drop' :
-                   newStatus === 'on_hold' ? 'Pause' :
-                   newStatus === 'want_to_play' ? 'Re-add' : newStatus}
-                </button>
-              ))}
-              <button
-                className="btn-secondary"
-                style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
-                onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
-                aria-label={`Edit ${item.game_title}`}
-              >
-                <FaPen />
-              </button>
-              <button
-                className="btn-danger"
-                style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
-                onClick={(e) => { e.stopPropagation(); deleteItem(item); }}
-                aria-label={`Remove ${item.game_title}`}
-              >
-                <FaTimes />
-              </button>
-            </div>
-          </div>
+      {!loading && filteredItems.length > 0 && isDragEnabled && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={filteredItems.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+            {filteredItems.map((item) => (
+              <SortableCard key={item.id} item={item}>
+                {renderCardContent(item)}
+              </SortableCard>
+            ))}
+          </SortableContext>
+        </DndContext>
+      )}
 
-          {/* Expanded details */}
-          {expandedId === item.id && (
-            <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
-              <div className="grid-2">
-                <div>
-                  {item.why_i_want_to_play && (
-                    <div style={{ marginBottom: '0.75rem' }}>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>WHY I WANT TO PLAY</div>
-                      <div style={{ fontSize: '0.9rem', fontStyle: 'italic', color: 'var(--accent-light)' }}>"{item.why_i_want_to_play}"</div>
-                    </div>
-                  )}
-                  {item.personal_notes && (
-                    <div style={{ marginBottom: '0.75rem' }}>
-                      <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.25rem' }}>NOTES</div>
-                      <div style={{ fontSize: '0.9rem' }}>{item.personal_notes}</div>
-                    </div>
-                  )}
-                  {item.mood_match && (
-                    <div style={{ marginBottom: '0.5rem' }}>
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Vibe match: </span>
-                      <span className="tag">{item.mood_match}</span>
-                      {item.expected_session_length && <span className="tag">{item.expected_session_length} sessions</span>}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.5rem' }}>HOW LONG TO BEAT</div>
-                  <HltbInfo
-                    mainStory={item.hltb_main_story}
-                    mainPlusExtras={item.hltb_main_plus_extras}
-                    completionist={item.hltb_completionist}
-                  />
-                  <div style={{ marginTop: '0.75rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                    {item.vibe_mood && <div>Atmosphere: <span style={{ color: 'var(--text)' }}>{item.vibe_mood}</span></div>}
-                    {item.vibe_story_pace && <div>Story pace: <span style={{ color: 'var(--text)' }}>{item.vibe_story_pace.replace('_', ' ')}</span></div>}
-                    <div>Added: {new Date(item.date_added).toLocaleDateString()}</div>
-                    <div>Priority: {item.priority}/100</div>
-                  </div>
-                </div>
-              </div>
-              <SessionLogger backlogItemId={item.id} currentRating={item.rating} onUpdate={() => loadItems()} />
-            </div>
-          )}
+      {!loading && filteredItems.length > 0 && !isDragEnabled && filteredItems.map((item) => (
+        <div key={item.id} className="card" style={{ marginBottom: '0.75rem' }}>
+          {renderCardContent(item)}
         </div>
       ))}
 

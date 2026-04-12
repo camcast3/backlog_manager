@@ -12,6 +12,9 @@ const migrations = [
   '001_initial_schema.sql',
   '002_seed_achievements.sql',
   '003_hltb_cache.sql',
+  '004_add_users.sql',
+  '005_play_sessions.sql',
+  '006_session_achievements.sql',
 ];
 
 async function migrate() {

@@ -74,3 +74,22 @@ export const analyticsApi = {
 export const recommendApi = {
   get: (params = {}) => request('GET', `/recommendations?${new URLSearchParams(params)}`),
 };
+
+// ── Export / Import ───────────────────────────────────────────
+async function downloadFile(path, filename) {
+  const res = await fetch(`${BASE}${path}`);
+  if (!res.ok) throw new Error('Export failed');
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export const exportApi = {
+  json: () => downloadFile('/backlog/export?format=json', 'backlog.json'),
+  csv: () => downloadFile('/backlog/export?format=csv', 'backlog.csv'),
+  importData: (data) => request('POST', '/backlog/import', data),
+};

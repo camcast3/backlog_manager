@@ -1,12 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { progressApi } from '../services/api';
 import { useToast } from '../context/ToastContext';
+
+const ACHIEVEMENT_CATEGORIES = [
+  'All', 'Collection', 'Completion', 'Playing', 'Vibe', 'Platform', 'Genre', 'Time', 'Personal', 'Level', 'Special',
+];
+
+function getCategory(achievement) {
+  const key = achievement.key || '';
+  if (key.startsWith('backlog_') || key.includes('collection') || key === 'first_game') return 'Collection';
+  if (key.startsWith('complete_') || key.includes('complete') || key === 'first_complete' || key.includes('marathoner')) return 'Completion';
+  if (key.startsWith('playing_') || key.includes('juggler') || key.includes('multitask') || key === 'first_drop') return 'Playing';
+  if (key.includes('vibe') || key.includes('chill') || key.includes('intense') || key.includes('brutal')) return 'Vibe';
+  if (key.includes('platform') || key.includes('retro') || key.includes('nintendo') || key.includes('playstation') || key.includes('xbox') || key.includes('pc_') || key.includes('sega') || key.includes('handheld') || key.includes('cross_gen')) return 'Platform';
+  if (key.includes('genre') || key.includes('rpg') || key.includes('action') || key.includes('indie') || key.includes('strategy') || key.includes('horror')) return 'Genre';
+  if (key.includes('streak') || key.includes('hours') || key.includes('night') || key.includes('weekend') || key.includes('time')) return 'Time';
+  if (key.includes('why') || key.includes('notes') || key.includes('staleness') || key.includes('priority') || key.includes('social')) return 'Personal';
+  if (key.startsWith('level_')) return 'Level';
+  return 'Special';
+}
 
 export default function ProgressPage() {
   const toast = useToast();
   const [progress, setProgress] = useState(null);
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadAll();
@@ -29,6 +49,39 @@ export default function ProgressPage() {
 
   const earned = achievements.filter((a) => a.earned);
   const locked = achievements.filter((a) => !a.earned);
+
+  const categoryCounts = useMemo(() => {
+    const counts = {};
+    for (const cat of ACHIEVEMENT_CATEGORIES) {
+      if (cat === 'All') {
+        counts[cat] = { earned: earned.length, total: achievements.length };
+      } else {
+        const inCat = achievements.filter(a => getCategory(a) === cat);
+        counts[cat] = { earned: inCat.filter(a => a.earned).length, total: inCat.length };
+      }
+    }
+    return counts;
+  }, [achievements, earned.length]);
+
+  const filteredEarned = useMemo(() => {
+    let result = earned;
+    if (selectedCategory !== 'All') result = result.filter(a => getCategory(a) === selectedCategory);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(a => a.title?.toLowerCase().includes(q) || a.description?.toLowerCase().includes(q));
+    }
+    return result;
+  }, [earned, selectedCategory, searchQuery]);
+
+  const filteredLocked = useMemo(() => {
+    let result = locked;
+    if (selectedCategory !== 'All') result = result.filter(a => getCategory(a) === selectedCategory);
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(a => a.title?.toLowerCase().includes(q) || a.description?.toLowerCase().includes(q));
+    }
+    return result;
+  }, [locked, selectedCategory, searchQuery]);
 
   return (
     <div>
@@ -78,14 +131,56 @@ export default function ProgressPage() {
         Achievements ({earned.length} / {achievements.length})
       </h2>
 
-      {earned.length > 0 && (
+      {/* Category tabs */}
+      <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+        {ACHIEVEMENT_CATEGORIES.filter(cat => categoryCounts[cat].total > 0 || cat === 'All').map(cat => (
+          <button
+            key={cat}
+            onClick={() => setSelectedCategory(cat)}
+            style={{
+              padding: '0.35rem 0.75rem', borderRadius: 999,
+              border: '1px solid var(--border)',
+              background: selectedCategory === cat ? 'var(--accent)' : 'var(--surface)',
+              color: selectedCategory === cat ? 'white' : 'var(--text-muted)',
+              fontWeight: 600, fontSize: '0.78rem', cursor: 'pointer',
+            }}
+          >
+            {cat} ({categoryCounts[cat].earned}/{categoryCounts[cat].total})
+          </button>
+        ))}
+      </div>
+
+      {/* Search achievements */}
+      <input
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Search achievements..."
+        style={{ maxWidth: 260, fontSize: '0.82rem', padding: '0.4rem 0.75rem', marginBottom: '1rem' }}
+      />
+
+      {/* Category progress bar */}
+      {selectedCategory !== 'All' && categoryCounts[selectedCategory].total > 0 && (
+        <div style={{ marginBottom: '1rem' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>
+            {selectedCategory} progress: {categoryCounts[selectedCategory].earned} / {categoryCounts[selectedCategory].total}
+          </div>
+          <div className="xp-bar-container" style={{ height: 10 }}>
+            <div
+              className="xp-bar-fill"
+              style={{ width: `${(categoryCounts[selectedCategory].earned / categoryCounts[selectedCategory].total) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {filteredEarned.length > 0 && (
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
           gap: '0.75rem',
           marginBottom: '1.5rem',
         }}>
-          {earned.map((a) => (
+          {filteredEarned.map((a) => (
             <div key={a.id} className="card" style={{ borderColor: '#fbbf24', background: 'rgba(251,191,36,0.06)' }}>
               <div>
                 <div style={{ fontWeight: 800 }}>{a.title}</div>
@@ -100,7 +195,7 @@ export default function ProgressPage() {
       )}
 
       {/* Locked achievements */}
-      {locked.length > 0 && (
+      {filteredLocked.length > 0 && (
         <>
           <h3 style={{ marginBottom: '0.75rem', fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 700 }}>
             LOCKED
@@ -110,7 +205,7 @@ export default function ProgressPage() {
             gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
             gap: '0.75rem',
           }}>
-            {locked.map((a) => (
+            {filteredLocked.map((a) => (
               <div key={a.id} className="card" style={{ opacity: 0.5 }}>
                 <div>
                   <div style={{ fontWeight: 800 }}>{a.title}</div>

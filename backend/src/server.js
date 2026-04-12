@@ -10,6 +10,7 @@ import searchRoutes from './routes/search.js';
 import analyticsRoutes from './routes/analytics.js';
 import recommendationRoutes from './routes/recommendations.js';
 import sessionRoutes from './routes/sessions.js';
+import exportImportRoutes from './routes/exportImport.js';
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 const HOST = process.env.HOST ?? '0.0.0.0';
@@ -37,6 +38,7 @@ export function buildServer(opts = {}) {
   fastify.register(analyticsRoutes, { prefix: '/api/analytics' });
   fastify.register(recommendationRoutes, { prefix: '/api/recommendations' });
   fastify.register(sessionRoutes, { prefix: '/api/backlog' });
+  fastify.register(exportImportRoutes, { prefix: '/api/backlog' });
 
   return fastify;
 }
