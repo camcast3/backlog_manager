@@ -1,0 +1,78 @@
+import { render, screen } from '@testing-library/react';
+import { describe, test, expect, vi } from 'vitest';
+
+vi.mock('../context/ThemeContext', () => ({
+  THEMES: {
+    dark: { label: 'Dark', Icon: () => <span>🌙</span>, vars: { '--bg': '#0f0f1a', '--surface': '#1a1a2e', '--accent': '#7c3aed', '--accent-light': '#a78bfa' } },
+    light: { label: 'Light', Icon: () => <span>☀️</span>, vars: { '--bg': '#f5f5f5', '--surface': '#ffffff', '--accent': '#7c3aed', '--accent-light': '#7c3aed' } },
+  },
+  useTheme: () => ({ theme: 'dark', setTheme: vi.fn() }),
+}));
+
+vi.mock('../services/api', () => ({
+  exportApi: {
+    json: vi.fn().mockResolvedValue(undefined),
+    csv: vi.fn().mockResolvedValue(undefined),
+    importData: vi.fn().mockResolvedValue({ imported: 5, skipped: [] }),
+  },
+}));
+
+vi.mock('react-icons/fa', () => ({
+  FaFileExport: () => <span>export-icon</span>,
+  FaFileImport: () => <span>import-icon</span>,
+}));
+
+import SettingsPage from './SettingsPage';
+
+describe('SettingsPage', () => {
+  test('renders page title', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText('Settings')).toBeInTheDocument();
+  });
+
+  test('renders Theme section', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText('Theme')).toBeInTheDocument();
+  });
+
+  test('renders theme options', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText('Dark')).toBeInTheDocument();
+    expect(screen.getByText('Light')).toBeInTheDocument();
+  });
+
+  test('renders export JSON button', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText('Export Backlog (JSON)')).toBeInTheDocument();
+  });
+
+  test('renders export CSV button', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText('Export Backlog (CSV)')).toBeInTheDocument();
+  });
+
+  test('renders import button', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText('Import Backlog')).toBeInTheDocument();
+  });
+
+  test('renders Data Management section', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText('Data Management')).toBeInTheDocument();
+  });
+
+  test('renders About section', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText('About')).toBeInTheDocument();
+  });
+
+  test('renders Tips section', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText('Tips')).toBeInTheDocument();
+  });
+
+  test('shows active indicator for current theme', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText('Active')).toBeInTheDocument();
+  });
+});
