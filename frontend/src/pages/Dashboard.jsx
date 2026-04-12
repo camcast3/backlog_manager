@@ -83,6 +83,27 @@ export default function Dashboard() {
       </div>
 
       {loading && <div className="spinner" />}
+
+      {/* Stats row — always visible, shows 0 while loading */}
+      <div className="grid-4" style={{ marginBottom: '1.5rem' }}>
+        <div className="stat-card">
+          <div className="stat-value">{stats?.want_to_play ?? 0}</div>
+          <div className="stat-label">Want to Play</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value" style={{ color: 'var(--success)' }}>{stats?.playing ?? 0}</div>
+          <div className="stat-label">Playing Now</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value">{stats?.completed ?? 0}</div>
+          <div className="stat-label">Completed</div>
+        </div>
+        <div className="stat-card">
+          <div className="stat-value">{stats?.total ?? 0}</div>
+          <div className="stat-label">Total Games</div>
+        </div>
+      </div>
+
       {loading ? null : (<>
 
 
@@ -129,26 +150,6 @@ export default function Dashboard() {
           </div>
         </div>
       )}
-
-      {/* Stats row */}
-      <div className="grid-4" style={{ marginBottom: '1.5rem' }}>
-        <div className="stat-card">
-          <div className="stat-value">{stats?.want_to_play ?? 0}</div>
-          <div className="stat-label">Want to Play</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value" style={{ color: 'var(--success)' }}>{stats?.playing ?? 0}</div>
-          <div className="stat-label">Playing Now</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">{stats?.completed ?? 0}</div>
-          <div className="stat-label">Completed</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-value">{stats?.total ?? 0}</div>
-          <div className="stat-label">Total Games</div>
-        </div>
-      </div>
 
       <div className="grid-2">
         {/* Currently playing */}
