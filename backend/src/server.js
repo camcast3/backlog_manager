@@ -36,7 +36,8 @@ export function buildServer(opts = {}) {
 }
 
 // Start the server when this file is run directly
-if (process.argv[1] === new URL(import.meta.url).pathname) {
+const __filename = new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1');
+if (process.argv[1].replace(/\\/g, '/') === __filename) {
   const server = buildServer();
   try {
     await server.listen({ port: PORT, host: HOST });
