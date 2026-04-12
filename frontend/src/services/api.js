@@ -36,6 +36,7 @@ export const backlogApi = {
   delete: (id) => request('DELETE', `/backlog/${id}`),
   stalenessResponse: (id, response) =>
     request('POST', `/backlog/${id}/staleness-response`, { response }),
+  vibePortfolio: () => request('GET', '/backlog/vibe-portfolio'),
 };
 
 // ── Progress / Gamification ────────────────────────────────────

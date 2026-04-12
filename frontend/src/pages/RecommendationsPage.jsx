@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   FaCouch, FaCompass, FaFistRaised, FaBook,
   FaGamepad, FaUsers, FaTrophy, FaPaintBrush,
-  FaDice, FaClock,
+  FaDice, FaClock, FaDoorOpen,
 } from 'react-icons/fa';
 import { recommendApi } from '../services/api';
 
@@ -15,6 +15,8 @@ const MOODS = [
   { key: 'social',      icon: FaUsers,       label: 'Play Together',desc: 'Co-op or multiplayer fun' },
   { key: 'competition', icon: FaTrophy,      label: 'Compete',      desc: 'PvP and leaderboards' },
   { key: 'creative',    icon: FaPaintBrush,  label: 'Create',       desc: 'Building and sandbox freedom' },
+  { key: 'escapism',   icon: FaDoorOpen,    label: 'Escape',       desc: 'Lose yourself in another world' },
+  { key: 'mastery',    icon: FaTrophy,      label: 'Master',       desc: 'Perfect your skills, 100% it' },
 ];
 
 const SESSION_LENGTHS = [

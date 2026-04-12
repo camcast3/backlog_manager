@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext';
 const navItems = [
   { to: '/', label: 'Dashboard' },
   { to: '/recommend', label: 'What to Play?' },
+  { to: '/vibe-dna', label: 'My Gamer DNA' },
   { to: '/backlog', label: 'Backlog' },
   { to: '/games', label: 'Game Library' },
   { to: '/progress', label: 'Progress' },

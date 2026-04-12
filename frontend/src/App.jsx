@@ -7,6 +7,7 @@ import GameLibraryPage from './pages/GameLibraryPage';
 import ProgressPage from './pages/ProgressPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import RecommendationsPage from './pages/RecommendationsPage';
+import VibePortfolioPage from './pages/VibePortfolioPage';
 import SettingsPage from './pages/SettingsPage';
 import LoginPage from './pages/LoginPage';
 import { ToastProvider } from './context/ToastContext';
@@ -35,6 +36,7 @@ function AppContent() {
           <Route path="/games" element={<GameLibraryPage />} />
           <Route path="/progress" element={<ProgressPage />} />
           <Route path="/recommend" element={<RecommendationsPage />} />
+          <Route path="/vibe-dna" element={<VibePortfolioPage />} />
           <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
