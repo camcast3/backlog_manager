@@ -4,6 +4,7 @@ import GamePicker from './GamePicker';
 
 vi.mock('react-icons/fa', () => ({
   FaTimes: () => <span>×</span>,
+  FaDice: () => <span>🎲</span>,
 }));
 
 vi.mock('../hooks/useFocusTrap', () => ({

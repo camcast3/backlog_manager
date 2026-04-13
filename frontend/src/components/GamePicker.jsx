@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { FaTimes } from 'react-icons/fa';
+import { FaTimes, FaDice } from 'react-icons/fa';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
 const WHEEL_COLORS = [
@@ -29,6 +29,15 @@ export default function GamePicker({ games, onClose }) {
     const arc = (2 * Math.PI) / items.length;
 
     ctx.clearRect(0, 0, size, size);
+
+    // Outer shadow ring
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 4, 0, 2 * Math.PI);
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fill();
+    ctx.restore();
+
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate((rot * Math.PI) / 180);
@@ -38,41 +47,71 @@ export default function GamePicker({ games, onClose }) {
       const startAngle = i * arc;
       const endAngle = startAngle + arc;
 
-      // Slice
+      // Slice with gradient
       ctx.beginPath();
       ctx.moveTo(cx, cy);
       ctx.arc(cx, cy, r, startAngle, endAngle);
       ctx.closePath();
-      ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
+      const baseColor = WHEEL_COLORS[i % WHEEL_COLORS.length];
+      ctx.fillStyle = baseColor;
       ctx.fill();
-      ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+
+      // Subtle inner highlight
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r * 0.95, startAngle + 0.02, endAngle - 0.02);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(255,255,255,0.07)';
+      ctx.fill();
+
+      // Slice border
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, startAngle, endAngle);
+      ctx.closePath();
+      ctx.strokeStyle = 'rgba(0,0,0,0.4)';
       ctx.lineWidth = 2;
       ctx.stroke();
 
-      // Text
+      // Text — render along the slice
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(startAngle + arc / 2);
-      ctx.textAlign = 'right';
-      ctx.fillStyle = '#fff';
-      ctx.font = `bold ${items.length > 6 ? 11 : 13}px system-ui`;
+
       const label = game.game_title || game.title || 'Game';
-      const truncated = label.length > 18 ? label.slice(0, 16) + '…' : label;
-      ctx.fillText(truncated, r - 16, 4);
+      const maxChars = items.length <= 3 ? 28 : items.length <= 6 ? 20 : 16;
+      const fontSize = items.length <= 3 ? 14 : items.length <= 6 ? 12 : 11;
+      const truncated = label.length > maxChars ? label.slice(0, maxChars - 1) + '…' : label;
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#fff';
+      ctx.font = `bold ${fontSize}px system-ui, -apple-system, sans-serif`;
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
+      ctx.shadowBlur = 3;
+      ctx.fillText(truncated, r * 0.55, 5);
       ctx.restore();
     });
+
+    // Center hub
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.12, 0, 2 * Math.PI);
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
 
     ctx.restore();
 
     // Pointer (triangle at top)
     ctx.beginPath();
-    ctx.moveTo(cx - 12, 4);
-    ctx.lineTo(cx + 12, 4);
-    ctx.lineTo(cx, 24);
+    ctx.moveTo(cx - 14, 0);
+    ctx.lineTo(cx + 14, 0);
+    ctx.lineTo(cx, 28);
     ctx.closePath();
     ctx.fillStyle = '#fff';
     ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.5)';
     ctx.lineWidth = 2;
     ctx.stroke();
   }
@@ -84,9 +123,6 @@ export default function GamePicker({ games, onClose }) {
 
     const winIndex = Math.floor(Math.random() * items.length);
     const arc = 360 / items.length;
-    // Land the pointer (at top = angle 0) in the middle of the winning slice
-    // The slice at index 0 starts at 0° from the right, but we draw from 3 o'clock
-    // Pointer is at the top (270°), so we need to calculate accordingly
     const targetAngle = 360 - (winIndex * arc + arc / 2) + 270;
     const totalRotation = 360 * (5 + Math.random() * 3) + (targetAngle % 360);
 
@@ -134,8 +170,10 @@ export default function GamePicker({ games, onClose }) {
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" ref={trapRef} role="dialog" aria-modal="true" aria-labelledby="game-picker-title" style={{ maxWidth: 480, textAlign: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 id="game-picker-title" className="modal-title" style={{ margin: 0 }}>Game Picker</h2>
-          <button onClick={onClose} aria-label="Close dialog" style={{ background: 'none', color: 'var(--text-muted)', fontSize: '1.25rem' }}><FaTimes /></button>
+          <h2 id="game-picker-title" className="modal-title" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <FaDice style={{ color: 'var(--accent-light)' }} /> Game Picker
+          </h2>
+          <button onClick={onClose} aria-label="Close dialog" style={{ background: 'none', color: 'var(--text-muted)', fontSize: '1.25rem', cursor: 'pointer', border: 'none' }}><FaTimes /></button>
         </div>
 
         <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
@@ -150,6 +188,21 @@ export default function GamePicker({ games, onClose }) {
             style={{ width: 320, height: 320 }}
           />
         </div>
+
+        {/* Legend for small game counts */}
+        {items.length <= 4 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'center', marginTop: '0.75rem' }}>
+            {items.map((g, i) => (
+              <span key={i} style={{
+                display: 'flex', alignItems: 'center', gap: '0.35rem',
+                fontSize: '0.8rem', color: 'var(--text-muted)',
+              }}>
+                <span style={{ width: 10, height: 10, borderRadius: 2, background: WHEEL_COLORS[i % WHEEL_COLORS.length], flexShrink: 0 }} />
+                {g.game_title || g.title}
+              </span>
+            ))}
+          </div>
+        )}
 
         {winner && (
           <div style={{
