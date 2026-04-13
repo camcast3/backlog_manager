@@ -94,7 +94,7 @@ export const exportApi = {
   json: () => downloadFile('/backlog/export?format=json', 'backlog.json'),
   csv: () => downloadFile('/backlog/export?format=csv', 'backlog.csv'),
   importData: (data) => request('POST', '/backlog/import', data),
-  wipe: () => request('DELETE', '/backlog/wipe?confirm=yes'),
+  wipe: () => request('POST', '/backlog/wipe?confirm=yes', {}),
 };
 
 // ── Steam Integration ────────────────────────────────────────

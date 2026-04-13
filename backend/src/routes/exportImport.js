@@ -140,8 +140,8 @@ export default async function exportImportRoutes(fastify) {
     return { imported, skipped, total: items.length };
   });
 
-  // DELETE /backlog/wipe — delete all user data (backlog, vibe profiles, progress, sessions)
-  fastify.delete('/wipe', async (req, reply) => {
+  // POST /backlog/wipe — delete all user data (backlog, vibe profiles, progress, sessions)
+  fastify.post('/wipe', async (req, reply) => {
     const confirm = req.query.confirm;
     if (confirm !== 'yes') {
       return reply.code(400).send({ error: 'Pass ?confirm=yes to wipe all data' });
@@ -154,7 +154,7 @@ export default async function exportImportRoutes(fastify) {
     await sql`DELETE FROM earned_achievements`;
     await sql`DELETE FROM backlog_items`;
     await sql`DELETE FROM games`;
-    await sql`UPDATE user_progress SET xp = 0, level = 1, games_added = 0, games_completed = 0, total_hours = 0`;
+    await sql`UPDATE user_progress SET xp = 0, level = 1, games_added = 0, games_completed = 0, games_dropped = 0, total_hours_logged = 0`;
 
     return { wiped: true, message: 'All user data has been deleted.' };
   });
