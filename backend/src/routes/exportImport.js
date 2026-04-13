@@ -3,6 +3,10 @@ import getDb from '../db/index.js';
 export default async function exportImportRoutes(fastify) {
   const sql = getDb();
 
+  // Accept POST with no body / text/plain for the wipe endpoint
+  fastify.addContentTypeParser('text/plain', { parseAs: 'string' }, (_req, body, done) => done(null, body));
+  fastify.addContentTypeParser('application/x-www-form-urlencoded', { parseAs: 'string' }, (_req, body, done) => done(null, body));
+
   // GET /backlog/export?format=json|csv
   fastify.get('/export', async (req, reply) => {
     const format = (req.query.format || 'json').toLowerCase();
@@ -147,14 +151,15 @@ export default async function exportImportRoutes(fastify) {
       return reply.code(400).send({ error: 'Pass ?confirm=yes to wipe all data' });
     }
 
-    // Delete in dependency order
-    await sql`DELETE FROM play_sessions`;
-    await sql`DELETE FROM staleness_checks`;
-    await sql`DELETE FROM vibe_profiles`;
-    await sql`DELETE FROM earned_achievements`;
-    await sql`DELETE FROM backlog_items`;
-    await sql`DELETE FROM games`;
-    await sql`UPDATE user_progress SET xp = 0, level = 1, games_added = 0, games_completed = 0, games_dropped = 0, total_hours_logged = 0`;
+    await sql.begin(async (tx) => {
+      await tx`DELETE FROM play_sessions`;
+      await tx`DELETE FROM staleness_checks`;
+      await tx`DELETE FROM vibe_profiles`;
+      await tx`DELETE FROM earned_achievements`;
+      await tx`DELETE FROM backlog_items`;
+      await tx`DELETE FROM games`;
+      await tx`UPDATE user_progress SET xp = 0, level = 1, games_added = 0, games_completed = 0, games_dropped = 0, total_hours_logged = 0`;
+    });
 
     return { wiped: true, message: 'All user data has been deleted.' };
   });
