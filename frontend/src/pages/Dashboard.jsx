@@ -53,12 +53,14 @@ export default function Dashboard() {
       if (val(1)) setProgress(val(1));
       if (val(2)) setRecentActivity(val(2));
       if (val(3)) setStaleItems(val(3));
-      const items = val(4);
-      if (items) setPlayingNow(items);
+      const playingRes = val(4);
+      const items = playingRes?.items ?? (Array.isArray(playingRes) ? playingRes : []);
+      setPlayingNow(items);
       setFocusGames(val(5) || []);
       setInsights(val(6));
-      const wtp = val(7);
-      setAllItems([...(items || []), ...(wtp || [])]);
+      const wtpRes = val(7);
+      const wtp = wtpRes?.items ?? (Array.isArray(wtpRes) ? wtpRes : []);
+      setAllItems([...items, ...wtp]);
     } catch (err) {
       toast(err.message, 'warning');
     } finally {
