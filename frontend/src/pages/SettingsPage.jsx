@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FaFileExport, FaFileImport } from 'react-icons/fa';
+import { FaFileExport, FaFileImport, FaTrashAlt, FaExclamationTriangle } from 'react-icons/fa';
 import { THEMES, useTheme } from '../context/ThemeContext';
 import { exportApi } from '../services/api';
 import SteamImport from '../components/SteamImport';
@@ -8,6 +8,8 @@ import BulkAdd from '../components/BulkAdd';
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const [toast, setToast] = useState(null);
+  const [showWipeConfirm, setShowWipeConfirm] = useState(false);
+  const [wiping, setWiping] = useState(false);
 
   const showToast = (msg, type = 'success') => {
     setToast({ msg, type });
@@ -41,6 +43,19 @@ export default function SettingsPage() {
       }
     };
     input.click();
+  };
+
+  const handleWipe = async () => {
+    setWiping(true);
+    try {
+      await exportApi.wipe();
+      showToast('All data wiped successfully');
+      setShowWipeConfirm(false);
+    } catch {
+      showToast('Wipe failed', 'error');
+    } finally {
+      setWiping(false);
+    }
   };
 
   return (
@@ -125,6 +140,60 @@ export default function SettingsPage() {
 
       {/* Bulk Add (Epic, GOG, etc.) */}
       <BulkAdd onImported={() => showToast('Bulk import complete — check your backlog!')} />
+
+      {/* Danger Zone */}
+      <div className="card" style={{ marginTop: '1.5rem', border: '1px solid rgba(239,68,68,0.3)' }}>
+        <h3 style={{ marginBottom: '1rem', fontWeight: 700, color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <FaExclamationTriangle /> Danger Zone
+        </h3>
+        {!showWipeConfirm ? (
+          <div>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1rem' }}>
+              Delete all your games, backlog items, vibe profiles, sessions, and progress. This cannot be undone.
+            </p>
+            <button
+              onClick={() => setShowWipeConfirm(true)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.5rem',
+                padding: '0.65rem 1.25rem', borderRadius: 'var(--radius)',
+                border: '1px solid rgba(239,68,68,0.5)', background: 'transparent',
+                color: '#ef4444', cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem',
+              }}
+            >
+              <FaTrashAlt /> Wipe All Data
+            </button>
+          </div>
+        ) : (
+          <div style={{ padding: '1rem', background: 'rgba(239,68,68,0.08)', borderRadius: 'var(--radius)' }}>
+            <p style={{ color: '#ef4444', fontWeight: 700, marginBottom: '0.75rem' }}>
+              Are you sure? This will permanently delete everything.
+            </p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+              Consider exporting your data first using the buttons above.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={handleWipe}
+                disabled={wiping}
+                style={{
+                  padding: '0.6rem 1.5rem', borderRadius: 'var(--radius)',
+                  border: 'none', background: '#ef4444',
+                  color: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem',
+                }}
+              >
+                <FaTrashAlt style={{ marginRight: '0.3rem' }} />
+                {wiping ? 'Wiping...' : 'Yes, Delete Everything'}
+              </button>
+              <button
+                className="btn-secondary"
+                onClick={() => setShowWipeConfirm(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Toast notification */}
       {toast && (

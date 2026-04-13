@@ -40,6 +40,7 @@ vi.mock('react-icons/fa', () => ({
   FaSearch: () => <span>search-icon</span>,
   FaExclamationTriangle: () => <span>warning-icon</span>,
   FaListUl: () => <span>list-icon</span>,
+  FaTrashAlt: () => <span>trash-icon</span>,
 }));
 
 import SettingsPage from './SettingsPage';
@@ -104,5 +105,11 @@ describe('SettingsPage', () => {
   test('renders Quick Bulk Add section', () => {
     render(<SettingsPage />);
     expect(screen.getByText('Quick Bulk Add')).toBeInTheDocument();
+  });
+
+  test('renders Danger Zone with Wipe All Data button', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText('Danger Zone')).toBeInTheDocument();
+    expect(screen.getByText('Wipe All Data')).toBeInTheDocument();
   });
 });

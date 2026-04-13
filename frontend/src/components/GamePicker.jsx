@@ -123,8 +123,15 @@ export default function GamePicker({ games, onClose }) {
 
     const winIndex = Math.floor(Math.random() * items.length);
     const arc = 360 / items.length;
-    const targetAngle = 360 - (winIndex * arc + arc / 2) + 270;
-    const totalRotation = 360 * (5 + Math.random() * 3) + (targetAngle % 360);
+    // Pointer is at top of canvas. In canvas coords, top = -90° (or 270°).
+    // Slice i spans from (i * arc) to ((i+1) * arc), measured from 3 o'clock.
+    // We need the wheel rotated so the center of slice winIndex aligns with 270°.
+    // Center of slice winIndex is at (winIndex * arc + arc / 2) degrees.
+    // We need: rotation + sliceCenter ≡ 270 (mod 360)
+    // So: rotation = 270 - sliceCenter (mod 360)
+    const sliceCenter = winIndex * arc + arc / 2;
+    const targetAngle = ((270 - sliceCenter) % 360 + 360) % 360;
+    const totalRotation = 360 * (5 + Math.random() * 3) + targetAngle;
 
     let startTime = null;
     const duration = 4000;
